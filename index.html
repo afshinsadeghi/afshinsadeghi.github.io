@@ -1,241 +1,194 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Afshin Sadeghi</title>
+<meta name="description" content="Afshin (Sean) Sadeghi, PhD — research scientist working on the reliability, factuality, and safety of large language models.">
+<meta property="og:title" content="Afshin Sadeghi">
+<meta property="og:description" content="Research scientist working on the reliability, factuality, and safety of large language models.">
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#6a7178; --faint:#8b9198;
+    --line:#eceef0; --accent:#345; --bg:#fff; --max:720px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; font-size:17px; font-weight:400;
+  }
+  a{color:var(--ink); text-decoration:none; border-bottom:1px solid #cfd4d8}
+  a:hover{border-bottom-color:var(--ink)}
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 24px}
 
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  /* top nav */
+  nav{border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex; gap:22px; align-items:center; padding:16px 24px; flex-wrap:wrap}
+  nav .name{font-weight:600; border:0; font-size:16px}
+  nav .spacer{flex:1}
+  nav a{border:0; color:var(--muted); font-size:14px}
+  nav a:hover{color:var(--ink)}
 
-    <title>Afshin Sadeghi</title>
+  /* header */
+  header.intro{padding:44px 0 8px}
+  header .row{display:flex; gap:24px; align-items:center; flex-wrap:wrap}
+  .avatar{width:92px; height:92px; border-radius:50%; object-fit:cover; flex:0 0 auto}
+  header h1{margin:0 0 3px; font-size:26px; font-weight:600; letter-spacing:-.2px}
+  header .sub{color:var(--muted); font-size:15px; margin:0}
+  .contact{margin-top:10px; font-size:14px; display:flex; gap:16px; flex-wrap:wrap}
+  .contact a{color:var(--muted); border:0}
+  .contact a:hover{color:var(--ink)}
 
-    <!-- Bootstrap Core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+  main{padding:26px 0 60px}
+  section{padding:26px 0; border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  h2{font-size:13px; text-transform:uppercase; letter-spacing:.11em; color:var(--faint);
+     margin:0 0 14px; font-weight:600}
+  p{margin:0 0 14px}
+  p:last-child{margin-bottom:0}
+  .bio a{color:var(--ink)}
 
-    <!-- Custom CSS: You can use this stylesheet to override any Bootstrap styles and/or apply your own styles -->
-    <link href="css/custom.css" rel="stylesheet">
+  ul.pubs{list-style:none; margin:0; padding:0}
+  ul.pubs li{padding:11px 0}
+  .pt{font-weight:500}
+  .pmeta{color:var(--muted); font-size:14px; margin-top:1px}
+  .venue{color:var(--accent); font-weight:600}
+  .plinks{font-size:13px; margin-top:3px}
+  .plinks a{color:var(--muted); border:0; margin-right:14px}
+  .plinks a:hover{color:var(--ink)}
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
+  .soft{margin:0; padding:0; list-style:none}
+  .soft li{padding:8px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:baseline}
+  .soft .st{font-weight:500}
+  .soft .sd{color:var(--muted); font-size:14px}
 
-    <!-- Custom Fonts from Google -->
-    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
-    
+  footer{border-top:1px solid var(--line); color:var(--faint); font-size:13px;
+         padding:22px 0 44px}
+</style>
 </head>
-
 <body>
 
-    <!-- Navigation -->
-    <nav id="siteNav" class="navbar navbar-default navbar-fixed-top" role="navigation">
-        <div class="container">
-            <!-- Logo and responsive toggle -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="mailto:afshin.sadeghi@iais.fraunhofer.de">
-                	<!--<span class="glyphicon glyphicon-fire"></span> -->
-                	EMAIL
-                </a>
-            </div>
-            <!-- Navbar links -->
-            <div class="collapse navbar-collapse" id="navbar">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="active">
-                        <a href="#">Home</a>
-                    </li>
-                    <li>
-                        <a href="https://www.linkedin.com/in/afshin-sadeghi-b58a72b3/">Profile</a>
-                    </li>
-                    <li>
-                        <a href="https://twitter.com/sadeghi_afshin">On Twitter</a>
-                    </li>
-                    <!-- dropdown menu 
-					<li class="dropdown">
-						<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Services <span class="caret"></span></a>
-						<ul class="dropdown-menu" aria-labelledby="about-us">
-							<li><a href="#">Engage</a></li>
-							<li><a href="#">Pontificate</a></li>
-							<li><a href="#">Synergize</a></li>
-						</ul>
-					</li>
-                     -->
-                    <li>
-                        <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en&oi=ao">Publications</a>
-                    </li>
-                </ul>
-                
-            </div><!-- /.navbar-collapse -->
-        </div><!-- /.container -->
-    </nav>
+<nav>
+  <div class="wrap">
+    <span class="name">Afshin Sadeghi</span>
+    <span class="spacer"></span>
+    <a href="#publications">Publications</a>
+    <a href="#software">Software</a>
+    <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en">Scholar</a>
+    <a href="https://github.com/afshinsadeghi">GitHub</a>
+  </div>
+</nav>
 
-	<!-- Header -->
-    <header>
-        <div class="header-content">
-            <div class="header-content-inner">
-                <h3> <b>Biography</b> </h3>
-                <h2>Afshin Sadeghi</h2>
-                <div class="col-sm-6">
-                    <img class="img-responsive img-circle center-block" src="images/photo-circle.png" alt="">
-                </div>
-                <p>Dr. Afshin Sadeghi is a PhD in the field of machine learning. In the years 2016-2018, he worked in University of Bonn as a researcher in Semantic Web and Knowledge Graphs. He joined Fraunhofer Institute in 2018 as a researcher with focus on modeling Knowledge Graphs. His research centers around representation learning methods for knowledge graphs and their applications in NLP and Industrial Graphs.</p>
-                <!-- <a href="#" class="btn btn-primary btn-lg">Download CV </a> -->
-            </div>
-        </div>
-    </header>
-
-	<!-- Intro Section -->
-    <section class="intro">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2">
-                	<!--  <span class="glyphicon glyphicon-apple" style="font-size: 60px"></span> -->
-                    <h2 class="section-heading">Selected Publications </h2>
-                    <!--  <p class="text-light">Professionally cultivate one-to-one customer service with robust ideas. Dynamically innovate resource-leveling customer service for state of the art customer service.</p>  -->
-                </div>
-            </div>
-        </div>
-    </section>
-
-	<!-- Content 1 -->
-    <section class="content">
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-6">
-                    <img class="img-responsive img-circle center-block" src="images/attentive2.png" alt="">
-                </div>
-                <div class="col-sm-6">
-                	<h2 class="section-header"> Embedding Knowledge Graphs Attentive to
-                        Positional and Centrality Qualities (ECML 2021)</h2>
-                	<p class="lead text-muted">This work proposes a novel KGE method named Graph Feature Attentive Neural Network (GFA-NN) that computes graphical features of entities.
-                        As a consequence, the resulting embeddings are attentive to two types of global network features.</p>
-                	<a href="https://2021.ecmlpkdd.org/wp-content/uploads/2021/07/sub_1096.pdf" class="btn btn-primary btn-default">Read the Complete Paper</a>
-
-                	<a href="https://github.com/mlwin-de/MDE" class="btn btn-primary btn-default">Source Code</a>
-                </div>                
-                
-            </div>
-        </div>
-    </section>
-
-	<!-- Content 2 -->
-     <section class="content content-2">
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-6">
-                	<h2 class="section-header"> MDE: Multiple Distance Embeddings for Link Prediction
-                        in Knowledge Graphs (ECAI 2020) </h2>
-                	<p class="lead text-light">MDE proposes Multi objective learning for KG embedding. By learning independent embedding vectors for each of the terms
-                        we can collectively train and predict using contradicting distance
-                        terms. We further demonstrate that MDE allows modeling relations
-                        with (anti)symmetry, inversion, and composition patterns. We pro-
-                        pose MDE as a neural network model that allows us to map non-
-                        linear relations between the embedding vectors and the expected out-
-                        put of the score function.</p>
-                	<a href="https://ecai2020.eu/papers/1271_paper.pdf" class="btn btn-default btn-default">Read the Complete Paper</a> 
-                    <a href="https://github.com/afshinsadeghi/GFA-NN" class="btn btn-primary btn-default">Source Code</a>
-                    
-                </div>    
-                <div class="col-sm-6">
-                    <img class="img-responsive img-circle center-block" src="images/mde.png" alt="">
-                </div>            
-                
-            </div>
-        </div>
-    </section>    
-
-    <!-- Promos
-	<div class="container-fluid">
-        <div class="row promo">
-        	<a href="#">
-				<div class="col-md-4 promo-item item-1">
-					<h3>
-						Unleash
-					</h3>
-				</div>
-            </a>
-            <a href="#">
-				<div class="col-md-4 promo-item item-2">
-					<h3>
-						Synergize
-					</h3>
-				</div>
-            </a>
-			
-			<a href="#">
-				<div class="col-md-4 promo-item item-3">
-					<h3>
-						Brainstorm
-					</h3>
-				</div>
-            </a>
-        </div>
-    </div>
-    end promos -->
-    <!-- /.container-fluid -->
-    
-	<!-- Content 3 -->
-     <section class="content content-3">
-        <div class="container">
-            <h2 class="section-header"> (NeurIPS 2021)</h2>
-			<!--  <h2 class="section-header"><span class="glyphicon glyphicon-pushpin text-primary"></span><br> </h2> -->
-			<h2 class="header">Relational Pattern Benchmarking on the  Knowledge Graph Link Prediction Task</h2>
-			
-            <p class="lead text-muted">Despite all the advancements in KGs, they plummet when it comes
-                to completeness. Link Prediction based on KG embeddings targets the sparsity
-                and incompleteness of KGs. Available datasets for Link Prediction do not consider
-                different graph patterns, making it difficult to measure the performance of link
-                prediction models on different KG settings. This paper presents a diverse set of
-                pragmatic datasets to facilitate flexible and problem-tailored Link Prediction and
-                Knowledge Graph Embeddings research. We define graph relational patterns, from
-                being entirely inductive in one set to being transductive in the other.</p> 
-                    <a href="https://openreview.net/pdf?id=Gln7zxMffae" class="btn btn-primary btn-default">Read the Complete Paper</a>               
-                    <a href="https://github.com/mlwin-de/relational_pattern_benchmarking" class="btn btn-primary btn-default">Source Code</a>          
-                </div>
-        </div>
-    </section>
-    
-	<!-- Footer -->
-    <footer class="page-footer">
-    
-    	<!-- Contact Us 
+<header class="intro">
+  <div class="wrap">
+    <div class="row">
+      <img class="avatar" src="images/photo-circle.png" alt="Afshin Sadeghi">
+      <div>
+        <h1>Afshin <span style="color:var(--muted);font-weight:400">(Sean)</span> Sadeghi, PhD</h1>
+        <p class="sub">AI Scientist, Fraunhofer IAIS &middot; K&ouml;ln, Germany</p>
         <div class="contact">
-        	<div class="container">
-				<h2 class="section-heading">Contact Us</h2>
-				<p><span class="glyphicon glyphicon-earphone"></span><br> +1(23) 456 7890</p>
-				<p><span class="glyphicon glyphicon-envelope"></span><br> info@example.com</p>
-        	</div>
+          <a href="mailto:sadeghi@afshn.com">sadeghi@afshn.com</a>
+          <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en">Google Scholar</a>
+          <a href="https://www.linkedin.com/in/afshin-sadeghi/">LinkedIn</a>
         </div>
-        	-->
-        <!-- Copyright etc
-        <div class="small-print">
-        	<div class="container">
-        		<p>Copyright &copy; Example.com 2015</p>
-        	</div>
-        </div>
-         -->
-    </footer>
+      </div>
+    </div>
+  </div>
+</header>
 
-    <!-- jQuery -->
-    <script src="js/jquery-1.11.3.min.js"></script>
+<main class="wrap">
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="js/bootstrap.min.js"></script>
+  <section class="bio">
+    <p>Large language models are fluent but not reliable: they state falsehoods confidently, drift from their evidence, and are hard to steer toward honest behavior. My research is about closing that gap, making the outputs of LLMs faithful, verifiable, and aligned with what a model actually knows.</p>
+    <p>I focus on this from three directions: detecting hallucinations before they reach the user, intervening on a model's internal representations at inference time to shape its behavior, and grounding generation in retrieved evidence so that answers can be checked. Earlier in my career I worked on representation learning and knowledge-graph embeddings, which still shapes how I think about structure and reliability in modern AI systems.</p>
+    <p>I hold a PhD in Artificial Intelligence from the University of Bonn, and have so far authored 15+ peer-reviewed publications, including first-author work at NeurIPS. Since Last year I joined AI Assurance and Assessment department to more focus on my research of AI safety. </p>
+  </section>
 
-    <!-- Plugin JavaScript -->
-    <script src="js/jquery.easing.min.js"></script>
-    
-    <!-- Custom Javascript -->
-    <script src="js/custom.js"></script>
+  <section id="publications">
+    <h2>Selected Publications</h2>
+    <ul class="pubs">
+
+      <li>
+        <div class="pt">Relational Pattern Benchmarking on the Knowledge Graph Link Prediction Task</div>
+        <div class="pmeta">A. Sadeghi, H. Abdul Malik, D. Collarana, J. Lehmann &middot; <span class="venue">NeurIPS 2021</span></div>
+        <div class="plinks"><a href="https://openreview.net/pdf?id=Gln7zxMffae">Paper</a><a href="https://github.com/mlwin-de/relational_pattern_benchmarking">Code</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Embedding Knowledge Graphs Attentive to Positional and Centrality Qualities</div>
+        <div class="pmeta">A. Sadeghi, D. Collarana, D. Graux, J. Lehmann &middot; <span class="venue">ECML 2021</span></div>
+        <div class="plinks"><a href="https://2021.ecmlpkdd.org/wp-content/uploads/2021/07/sub_1096.pdf">Paper</a><a href="https://github.com/afshinsadeghi/GFA-NN">Code</a></div>
+      </li>
+
+      <li>
+        <div class="pt">MDE: Multiple Distance Embeddings for Link Prediction in Knowledge Graphs</div>
+        <div class="pmeta">A. Sadeghi, D. Graux, H. Shariat Yazdi, J. Lehmann &middot; <span class="venue">ECAI 2020</span></div>
+        <div class="plinks"><a href="https://ecai2020.eu/papers/1271_paper.pdf">Paper</a><a href="https://github.com/mlwin-de/MDE">Code</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Building Virtual Patients Using Simulation-Based Inference</div>
+        <div class="pmeta">N. Paul, V. Karamitsou, C. Giegerich, A. Sadeghi, et al. &middot; <span class="venue">Frontiers in Systems Biology 2024</span></div>
+        <div class="plinks"><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">BenchEmbedd: A FAIR Benchmarking Tool for Knowledge Graph Embeddings</div>
+        <div class="pmeta">A. Sadeghi, X. Shahini, M. Schmitz, J. Lehmann &middot; <span class="venue">SEMANTiCS 2021</span></div>
+      </li>
+
+      <li>
+        <div class="pt">Meta-Hyperband: Hyperparameter Optimization with Meta-Learning and Coarse-to-Fine</div>
+        <div class="pmeta">S. Payrosangari, A. Sadeghi, D. Graux, J. Lehmann &middot; <span class="venue">IDEAL 2020</span></div>
+        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-030-62362-3_30">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Steiner Tree Methods for Optimal Sub-Network Identification: An Empirical Study</div>
+        <div class="pmeta">A. Sadeghi, H. Fr&ouml;hlich &middot; <span class="venue">BMC Bioinformatics 2013</span></div>
+        <div class="plinks"><a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-144">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Integration of Scholarly Communication Metadata Using Knowledge Graphs</div>
+        <div class="pmeta">A. Sadeghi, C. Lange, M.-E. Vidal, S. Auer &middot; <span class="venue">TPDL 2017</span></div>
+        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-319-67008-9_26">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Opening and Reusing Transparent Peer Reviews with Automatic Article Annotation</div>
+        <div class="pmeta">A. Sadeghi, S. Capadisli, J. Wilm, C. Lange, P. Mayr &middot; <span class="venue">Publications (MDPI) 2019</span></div>
+        <div class="plinks"><a href="https://www.mdpi.com/2304-6775/7/1/9">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Linking Physicians to Medical Research Results via Knowledge Graph Embeddings and Twitter</div>
+        <div class="pmeta">A. Sadeghi, J. Lehmann &middot; <span class="venue">ECML Workshops 2019</span></div>
+      </li>
+
+    </ul>
+    <p style="margin-top:14px;font-size:14px;color:var(--muted)">
+      Full list on <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en" style="color:var(--muted);border:0;text-decoration:underline">Google Scholar</a>.
+    </p>
+  </section>
+
+  <section id="software">
+    <h2>Open-Source Contributions</h2>
+    <ul class="soft">
+      <li><span class="st"><a href="https://github.com/afshinsadeghi/SteinerNet">SteinerNet</a></span> <span class="sd">&mdash; R library for Steiner tree computation. 24K+ CRAN downloads.</span></li>
+      <li><span class="st"><a href="https://github.com/afshinsadeghi/min_llm_server_client">min_llm_server_client</a></span> <span class="sd">&mdash; minimal LLM inference server/client (HF Transformers + vLLM). 12K+ pip downloads.</span></li>
+      <li><span class="st"><a href="https://github.com/afshinsadeghi/steinernetpy">steinernetpy</a></span> <span class="sd">&mdash; Python implementation of the SteinerNet library.</span></li>
+    </ul>
+  </section>
+
+
+</main>
+
+<footer class="wrap">
+  &copy; 2026 Afshin Sadeghi
+</footer>
 
 </body>
-
 </html>
