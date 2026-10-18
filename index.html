@@ -55,9 +55,16 @@
   .pt{font-weight:500}
   .pmeta{color:var(--muted); font-size:14px; margin-top:1px}
   .venue{color:var(--accent); font-weight:600}
+  .pnote{color:var(--muted); font-size:14px; font-style:italic; margin-top:1px}
   .plinks{font-size:13px; margin-top:3px}
   .plinks a{color:var(--muted); border:0; margin-right:14px}
   .plinks a:hover{color:var(--ink)}
+
+  .exp{margin:0; padding:0; list-style:none}
+  .exp li{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--line)}
+  .exp li:last-child{border-bottom:0}
+  .exp .eo{font-weight:500}
+  .exp .ey{color:var(--muted); font-size:14px; white-space:nowrap}
 
   .soft{margin:0; padding:0; list-style:none}
   .soft li{padding:8px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:baseline}
@@ -74,6 +81,7 @@
   <div class="wrap">
     <span class="name">Afshin Sadeghi</span>
     <span class="spacer"></span>
+    <a href="#experience">Experience</a>
     <a href="#publications">Publications</a>
     <a href="#software">Software</a>
     <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en">Scholar</a>
@@ -103,12 +111,36 @@
   <section class="bio">
     <p>Large language models are fluent but not reliable: they state falsehoods confidently, drift from their evidence, and are hard to steer toward honest behavior. My research is about closing that gap, making the outputs of LLMs faithful, verifiable, and aligned with what a model actually knows.</p>
     <p>I focus on this from three directions: detecting hallucinations before they reach the user, intervening on a model's internal representations at inference time to shape its behavior, and grounding generation in retrieved evidence so that answers can be checked. Earlier in my career I worked on representation learning and knowledge-graph embeddings, which still shapes how I think about structure and reliability in modern AI systems.</p>
-    <p>I hold a PhD in Artificial Intelligence from the University of Bonn, and have so far authored 15+ peer-reviewed publications, including first-author work at NeurIPS. Since Last year I joined AI Assurance and Assessment department to more focus on my research of AI safety. </p>
+    <p>I hold a PhD in Artificial Intelligence from the University of Bonn, where I worked on learning representations for knowledge graphs and their application in NLP, and have so far authored 15+ peer-reviewed publications, including first-author work at NeurIPS. Since last year I joined the AI Assurance and Assessment department to focus more on my research of AI safety.</p>
+    <p>Previously, I was a Research Scientist at Fraunhofer IAIS, where I contributed to LLM development and post-training in the OpenGPT-X project and led the MLwin project on knowledge-graph embeddings, and worked with industry partners such as BMW and Sanofi. Before that, I was a researcher at the University of Bonn, building knowledge graphs for scholarly communication. Before research, I worked as a software developer in Cologne, at Loyalty Factory and at Comunio, whose online game was named Germany&rsquo;s Most Popular Online Game of the Year while I was on the team.</p>
+  </section>
+
+  <section id="experience">
+    <h2>Experience</h2>
+    <ul class="exp">
+      <li><span class="eo">Fraunhofer IAIS</span><span class="ey">2018&ndash;present</span></li>
+      <li><span class="eo">University of Bonn</span><span class="ey">2016&ndash;2018</span></li>
+      <li><span class="eo">Loyalty Factory GmbH</span><span class="ey">2014&ndash;2015</span></li>
+      <li><span class="eo">Comunio GmbH</span><span class="ey">2013&ndash;2014</span></li>
+    </ul>
   </section>
 
   <section id="publications">
     <h2>Selected Publications</h2>
     <ul class="pubs">
+
+      <li>
+        <div class="pt">Robustness and Reproducibility for Data-Driven Weather Forecasting</div>
+        <div class="pmeta">S. Schmidt, M. Akila, A. Sadeghi, E. Prjadka, D. Benn-Maksimovic &middot; <span class="venue">Destination Earth White Paper 2026</span></div>
+        <div class="plinks"><a href="papers/robustness-reproducibility-data-driven-weather-forecasting-2026.pdf">PDF</a><a href="papers/robustness-reproducibility-weather-forecasting.html">Details</a><a href="https://www.ecmwf.int/sites/default/files/elibrary/022026/81718-robustness-and-reproducibility-for-data-driven-weather-forecasting.pdf">ECMWF</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Building Virtual Patients Using Simulation-Based Inference</div>
+        <div class="pmeta">N. Paul, V. Karamitsou, C. Giegerich, A. Sadeghi, et al. &middot; <span class="venue">Frontiers in Systems Biology 2024</span></div>
+        <div class="pnote">Includes experiments on generating virtual patients using diffusion models.</div>
+        <div class="plinks"><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></div>
+      </li>
 
       <li>
         <div class="pt">Relational Pattern Benchmarking on the Knowledge Graph Link Prediction Task</div>
@@ -123,38 +155,20 @@
       </li>
 
       <li>
+        <div class="pt">BenchEmbedd: A FAIR Benchmarking Tool for Knowledge Graph Embeddings</div>
+        <div class="pmeta">A. Sadeghi, X. Shahini, M. Schmitz, J. Lehmann &middot; <span class="venue">SEMANTiCS 2021</span></div>
+      </li>
+
+      <li>
         <div class="pt">MDE: Multiple Distance Embeddings for Link Prediction in Knowledge Graphs</div>
         <div class="pmeta">A. Sadeghi, D. Graux, H. Shariat Yazdi, J. Lehmann &middot; <span class="venue">ECAI 2020</span></div>
         <div class="plinks"><a href="https://ecai2020.eu/papers/1271_paper.pdf">Paper</a><a href="https://github.com/mlwin-de/MDE">Code</a></div>
       </li>
 
       <li>
-        <div class="pt">Building Virtual Patients Using Simulation-Based Inference</div>
-        <div class="pmeta">N. Paul, V. Karamitsou, C. Giegerich, A. Sadeghi, et al. &middot; <span class="venue">Frontiers in Systems Biology 2024</span></div>
-        <div class="plinks"><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></div>
-      </li>
-
-      <li>
-        <div class="pt">BenchEmbedd: A FAIR Benchmarking Tool for Knowledge Graph Embeddings</div>
-        <div class="pmeta">A. Sadeghi, X. Shahini, M. Schmitz, J. Lehmann &middot; <span class="venue">SEMANTiCS 2021</span></div>
-      </li>
-
-      <li>
         <div class="pt">Meta-Hyperband: Hyperparameter Optimization with Meta-Learning and Coarse-to-Fine</div>
         <div class="pmeta">S. Payrosangari, A. Sadeghi, D. Graux, J. Lehmann &middot; <span class="venue">IDEAL 2020</span></div>
         <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-030-62362-3_30">Paper</a></div>
-      </li>
-
-      <li>
-        <div class="pt">Steiner Tree Methods for Optimal Sub-Network Identification: An Empirical Study</div>
-        <div class="pmeta">A. Sadeghi, H. Fr&ouml;hlich &middot; <span class="venue">BMC Bioinformatics 2013</span></div>
-        <div class="plinks"><a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-144">Paper</a></div>
-      </li>
-
-      <li>
-        <div class="pt">Integration of Scholarly Communication Metadata Using Knowledge Graphs</div>
-        <div class="pmeta">A. Sadeghi, C. Lange, M.-E. Vidal, S. Auer &middot; <span class="venue">TPDL 2017</span></div>
-        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-319-67008-9_26">Paper</a></div>
       </li>
 
       <li>
@@ -168,6 +182,18 @@
         <div class="pmeta">A. Sadeghi, J. Lehmann &middot; <span class="venue">ECML Workshops 2019</span></div>
       </li>
 
+      <li>
+        <div class="pt">Integration of Scholarly Communication Metadata Using Knowledge Graphs</div>
+        <div class="pmeta">A. Sadeghi, C. Lange, M.-E. Vidal, S. Auer &middot; <span class="venue">TPDL 2017</span></div>
+        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-319-67008-9_26">Paper</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Steiner Tree Methods for Optimal Sub-Network Identification: An Empirical Study</div>
+        <div class="pmeta">A. Sadeghi, H. Fr&ouml;hlich &middot; <span class="venue">BMC Bioinformatics 2013</span></div>
+        <div class="plinks"><a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-144">Paper</a></div>
+      </li>
+
     </ul>
     <p style="margin-top:14px;font-size:14px;color:var(--muted)">
       Full list on <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en" style="color:var(--muted);border:0;text-decoration:underline">Google Scholar</a>.
@@ -178,7 +204,7 @@
     <h2>Open-Source Contributions</h2>
     <ul class="soft">
       <li><span class="st"><a href="https://github.com/afshinsadeghi/SteinerNet">SteinerNet</a></span> <span class="sd">&mdash; R library for Steiner tree computation. 24K+ CRAN downloads.</span></li>
-      <li><span class="st"><a href="https://github.com/afshinsadeghi/min_llm_server_client">min_llm_server_client</a></span> <span class="sd">&mdash; minimal LLM inference server/client (HF Transformers + vLLM). 12K+ pip downloads.</span></li>
+      <li><span class="st"><a href="https://github.com/afshinsadeghi/min_llm_server_client">min_llm_server_client</a></span> <span class="sd">&mdash; ready-to-use server API for language models, compatible with Hugging Face models and vLLM. 14K+ pip downloads.</span></li>
       <li><span class="st"><a href="https://github.com/afshinsadeghi/steinernetpy">steinernetpy</a></span> <span class="sd">&mdash; Python implementation of the SteinerNet library.</span></li>
     </ul>
   </section>
