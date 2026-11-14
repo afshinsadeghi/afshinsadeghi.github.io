@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidential Graph Reasoning for LLM Factuality — Afshin Sadeghi</title>
+<meta name="description" content="Interactive explainer: fact verification by explicit belief-function fusion over knowledge-graph triples, with abstention when the evidence is weak or conflicting.">
+<meta property="og:title" content="Evidential Graph Reasoning for LLM Factuality">
+<meta property="og:description" content="Fact verification by explicit Dempster–Shafer fusion of retrieved triples. Interactive explainer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:ital,wght@0,300..700;1,300..700&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre']}};</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+<style>
+  /* ---- page-specific styles ---- */
+  .sb{display:flex; height:16px; border-radius:5px; overflow:hidden; background:var(--line)}
+  .sb.big{height:26px; border-radius:7px}
+  .sb i{display:block; height:100%; transition:width .18s}
+  .sb i.c{background:var(--accent)}
+  .sb i.r{background:var(--warm)}
+  .sb i.t{background:var(--faint); opacity:.5}
+  .sb i.e{background:var(--blue)}
+  .k-c{color:var(--accent-ink); font-weight:600}
+  .k-r{color:var(--warm); font-weight:600}
+  .k-t{color:var(--muted); font-weight:600}
+  .k-e{color:var(--blue); font-weight:600}
+  .legend i.c{background:var(--accent)} .legend i.r{background:var(--warm)} .legend i.t{background:var(--faint); opacity:.6} .legend i.e{background:var(--blue)}
+
+  /* problem comparison */
+  .vs{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0}
+  @media (max-width:700px){.vs{grid-template-columns:1fr}}
+  .vs .box{border:1px solid var(--line); border-radius:var(--radius); padding:14px 18px; background:var(--surface)}
+  .vs .box.good{border-color:var(--accent); background:var(--accent-soft)}
+  .vs h4{margin:0 0 8px; font-size:16px; color:var(--ink-strong)}
+  .vs .flow{font-family:var(--mono); font-size:12.5px; color:var(--muted); margin:0 0 10px; line-height:1.7}
+  .vs ul{margin:0; padding-left:20px; font-size:16px}
+  .vs li{margin-bottom:4px}
+
+  /* stepper */
+  .steps{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px}
+  .steps button{font:inherit; font-size:14.5px; border:1px solid var(--line); background:var(--bg); color:var(--muted);
+    border-radius:999px; padding:5px 13px 5px 6px; cursor:pointer; display:flex; align-items:center; gap:7px}
+  .steps button b{display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--line); color:var(--ink); font-size:12.5px}
+  .steps button.on{border-color:var(--accent); color:var(--ink-strong); background:var(--accent-soft)}
+  .steps button.on b{background:var(--accent); color:#fff}
+  .steps button.done b{background:var(--accent-soft); color:var(--accent-ink)}
+  .stepbody{display:grid; grid-template-columns:1.1fr 1fr; gap:18px}
+  @media (max-width:760px){.stepbody{grid-template-columns:1fr}}
+  .stepbody h4{margin:0 0 6px; font-size:19px; color:var(--ink-strong)}
+  .stepbody p{margin:0 0 10px; font-size:16.5px}
+  .stepdemo{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; font-size:14.5px; min-height:140px}
+  .stepdemo .mono{font-family:var(--mono); font-size:12.5px}
+  .stepdemo table{border-collapse:collapse; width:100%; font-size:13.5px}
+  .stepdemo td,.stepdemo th{padding:4px 6px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top}
+  .stepdemo th{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .stepdemo .chip{display:inline-block; padding:1px 8px; border-radius:999px; font-size:12.5px; font-weight:600; margin-right:4px}
+  .chip.c{background:var(--accent-soft); color:var(--accent-ink)}
+  .chip.r{background:var(--warm-soft); color:var(--warm)}
+  .chip.t{background:var(--line); color:var(--muted)}
+  .stepnav{display:flex; gap:10px; margin-top:12px}
+
+  /* playground */
+  .claimbox{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:9px 14px; font-size:16px; margin:0 0 12px}
+  .claimbox small{display:block; color:var(--muted); font-size:13px; margin-top:2px}
+  .presets{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 6px}
+  .trow{display:grid; grid-template-columns:minmax(0,1.35fr) auto minmax(130px,.8fr) minmax(150px,.9fr) 30px; gap:8px 16px;
+    align-items:center; padding:10px 0; border-top:1px solid var(--line)}
+  .trow:first-child{border-top:0}
+  .trow .tt{font-family:var(--mono); font-size:12.5px; line-height:1.4; color:var(--ink); word-break:break-word}
+  .trow .loo{font-size:12.5px; color:var(--muted); margin-top:3px; font-family:var(--sans)}
+  .trow .seg button{padding:5px 9px; font-size:14px; font-family:var(--mono)}
+  .trow .wc{display:flex; align-items:center; gap:8px}
+  .trow .wc input{width:100%}
+  .trow .mm{font-family:var(--sans); font-weight:600; font-size:13px; color:var(--muted); margin-top:4px; display:flex; gap:9px}
+  .trow .x{border:0; background:transparent; color:var(--faint); font-size:20px; cursor:pointer; line-height:1}
+  .trow .x:hover{color:var(--warm)}
+  @media (max-width:760px){
+    .trow{grid-template-columns:1fr 30px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:8px; background:var(--bg)}
+    .trow>div:nth-child(1){grid-column:1}
+    .trow>.x{grid-column:2; grid-row:1}
+    .trow>div:nth-child(2),.trow>div:nth-child(3),.trow>div:nth-child(4){grid-column:1 / -1}
+  }
+  .fusedwrap{display:grid; grid-template-columns:1.2fr 1fr; gap:18px; margin-top:14px}
+  @media (max-width:760px){.fusedwrap{grid-template-columns:1fr}}
+  .nums{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0 4px}
+  .nums.n3{grid-template-columns:repeat(3,1fr)}
+  .nums div{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px 10px}
+  .nums small{display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .nums b{font-family:var(--mono); font-size:19px; font-weight:600}
+  .verdict{border-radius:8px; padding:10px 14px; font-size:16px; border:1px solid var(--line); background:var(--bg)}
+  .verdict .vl{font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:700}
+  .verdict .vv{font-size:21px; font-weight:700; margin:1px 0 3px}
+  .verdict.C{border-color:var(--accent); background:var(--accent-soft)} .verdict.C .vv{color:var(--accent-ink)}
+  .verdict.R{border-color:var(--warm); background:var(--warm-soft)} .verdict.R .vv{color:var(--warm)}
+  .verdict.T .vv{color:var(--muted)}
+  .verdict.E .vv{color:var(--blue)} .verdict.E{border-color:var(--blue); background:var(--blue-soft)}
+  .interval{margin:8px 0 0; font-size:14.5px}
+  .interval .track{position:relative; height:10px; background:var(--line); border-radius:5px; margin:3px 0 7px}
+  .interval .track i{position:absolute; top:0; height:10px; border-radius:5px; opacity:.9}
+  .ok{color:var(--accent-ink); font-weight:700} .bad{color:var(--warm); font-weight:700}
+
+  /* operators */
+  .opgrid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media (max-width:760px){.opgrid{grid-template-columns:1fr}}
+  .ch{display:grid; grid-template-columns:70px 1fr; gap:4px 10px; align-items:center; font-size:14px; padding:6px 0; border-top:1px solid var(--line)}
+  .ch:first-child{border-top:0}
+  .ch .lab{font-family:var(--mono); font-size:12.5px; color:var(--muted)}
+  .ch .sl{display:flex; align-items:center; gap:8px}
+  .ch .sl span{font-size:12px; color:var(--muted); min-width:2.2em}
+  .ch input{width:100%}
+
+  /* results bars */
+  .brow{display:grid; grid-template-columns:170px 1fr 120px; gap:10px; align-items:center; padding:5px 0; font-size:15px}
+  @media (max-width:640px){.brow{grid-template-columns:1fr; gap:3px} .brow .bl{font-weight:600}}
+  .brow .bl{color:var(--ink)}
+  .brow .bl.me{font-weight:700; color:var(--ink-strong)}
+  .brow .bt{height:20px; background:var(--line); border-radius:5px; position:relative; overflow:hidden}
+  .brow .bt i{position:absolute; left:0; top:0; bottom:0; border-radius:5px 0 0 5px; transition:width .22s; background:var(--faint); opacity:.65}
+  .brow.me .bt i{background:var(--accent); opacity:1}
+  .brow.van .bt i{background:var(--blue); opacity:.8}
+  .brow .bv{font-family:var(--mono); font-size:13.5px; color:var(--ink-strong)}
+  .brow .bv em{font-style:normal; color:var(--muted); font-size:12.5px; margin-left:6px}
+  .brow .bv em.pos{color:var(--accent-ink)} .brow .bv em.neg{color:var(--warm)}
+  .llmgroup{margin-top:14px; padding-top:10px; border-top:1px solid var(--line)}
+  .llmgroup h5{margin:0 0 2px; font-size:14px; color:var(--ink-strong)}
+  .lens{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:6px 0 12px}
+  .lens div{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 12px}
+  .lens small{display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+  .lens b{font-family:var(--mono); font-size:20px; font-weight:600}
+  .lens b.pos{color:var(--accent-ink)} .lens b.neg{color:var(--warm)}
+  .lens .sub{font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.35}
+  .toc{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:15px; margin:0 0 4px; color:var(--muted)}
+  .toc a{color:var(--muted)} .toc a:hover{color:var(--accent)}
+  .mono-note{font-size:14px; color:var(--muted)}
+  @media (max-width:640px){
+    .controls label{flex-wrap:wrap; max-width:100%}
+    .seg{flex-wrap:wrap; max-width:100%}
+    .seg button{padding:6px 10px; font-size:14px; border-bottom:1px solid var(--line)}
+    #ruleSeg button{flex:1 1 auto}
+    article h2{font-size:26px}
+  }
+</style>
+</head>
+<body>
+<div class="reading-bar" id="rbar"></div>
+
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="../../index.html">Afshin Sadeghi</a>
+    <a class="l on" href="../../index.html#research">Research</a>
+    <a class="l" href="../../index.html#news">News</a>
+    <a class="l" href="../../index.html#publications">Publications</a>
+    <a class="l" href="../../index.html#software">Software</a>
+    <span class="sp"></span>
+  </div>
+</nav>
+
+<header class="hero">
+  <canvas class="hero-net" data-seed="23" data-nodes="46" aria-hidden="true"></canvas>
+  <div class="wrap wide" style="max-width:var(--max)">
+    <p class="kicker">Evidential Graph Reasoning for LLM Factuality:</p>
+    <h1>A Belief-Function Fusion of Retrieved Triples</h1>
+    <div class="standfirst">
+      <p class="lab">In easy words</p>
+      <p>A fact checker built on an LLM is a black box: you hand it the evidence, it hands back &ldquo;true&rdquo; or &ldquo;false&rdquo;, and you cannot see how any single fact counted. We replace that step with arithmetic. Each retrieved fact becomes a small piece of evidence <b>for</b> or <b>against</b> the claim on a graph, the pieces are combined with a <b>graph belief function based on Dempster&ndash;Shafer theory</b>, and when ignorance ends up with the largest share, the symbolic layer says &ldquo;not enough information&rdquo; and the full system asks the plain LLM instead of guessing.</p>
+      <p>On the claim-focused Answer benchmark, where the evidence is a short passage written for the claim, the reported accuracy is higher than GPT-4.1 on its own, retrieval (RAG) and GraphRAG. On noisy or misleading evidence the outcome depends on the model: with Gemma the accuracy still improves on every benchmark, while with GPT-4.1 and Llama there is little or no advantage, and by some metrics it is worse, clearly so for Llama on Gold. Two label-free statistics of the retrieved evidence show in advance whether it carries any direction at all, though not whether that direction is right.</p>
+    </div>
+  </div>
+</header>
+
+<section class="hl" aria-label="Three results at a glance">
+  <div class="grid">
+
+    <a class="tile" href="#fusion">
+      <div class="vis">
+        <svg viewBox="0 0 260 170" role="img" aria-label="Animation: three retrieved facts each carry a mass for, against or undecided; the masses are combined into one bar and give a verdict, or 'not enough information' when the facts say nothing either way.">
+          <!-- scenario 1: two supporting facts, one neutral -->
+          <g class="eg-g1">
+            <rect x="10" y="14" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="29" font-size="10.5" fill="var(--hl-ink)">fact 1 &middot; supports the claim</text>
+            <rect x="170" y="21" width="80" height="8" rx="4" fill="var(--hl-grey)"/><rect x="170" y="21" width="52" height="8" rx="4" fill="var(--hl-ink)"/>
+            <rect x="10" y="44" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="59" font-size="10.5" fill="var(--hl-ink)">fact 2 &middot; supports, indirectly</text>
+            <rect x="170" y="51" width="80" height="8" rx="4" fill="var(--hl-grey)"/><rect x="170" y="51" width="20" height="8" rx="4" fill="var(--hl-ink)"/>
+            <rect x="10" y="74" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="89" font-size="10.5" fill="var(--hl-ink)">fact 3 &middot; says nothing either way</text>
+            <rect x="170" y="81" width="80" height="8" rx="4" fill="var(--hl-grey)"/>
+          </g>
+          <!-- scenario 2: all neutral -->
+          <g class="eg-g2">
+            <rect x="10" y="14" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="29" font-size="10.5" fill="var(--hl-ink)">fact 1 &middot; says nothing either way</text>
+            <rect x="170" y="21" width="80" height="8" rx="4" fill="var(--hl-grey)"/>
+            <rect x="10" y="44" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="59" font-size="10.5" fill="var(--hl-ink)">fact 2 &middot; says nothing either way</text>
+            <rect x="170" y="51" width="80" height="8" rx="4" fill="var(--hl-grey)"/>
+            <rect x="10" y="74" width="150" height="22" rx="6" fill="var(--hl-panel)" stroke="var(--hl-line)"/><text x="18" y="89" font-size="10.5" fill="var(--hl-ink)">fact 3 &middot; weakly against</text>
+            <rect x="170" y="81" width="80" height="8" rx="4" fill="var(--hl-grey)"/><rect x="238" y="81" width="12" height="8" rx="4" fill="var(--hl-red)"/>
+          </g>
+          <text x="130" y="112" font-size="10" text-anchor="middle" fill="var(--hl-slate)">&oplus; combine the masses (belief function)</text>
+          <rect x="10" y="120" width="240" height="12" rx="6" fill="var(--hl-grey)"/>
+          <rect class="eg-sup" x="10" y="120" width="240" height="12" rx="6" fill="var(--hl-ink)"/>
+          <rect class="eg-ref" x="10" y="120" width="240" height="12" rx="6" fill="var(--hl-red)"/>
+          <text x="12" y="146" font-size="9.5" fill="var(--hl-slate)">for</text>
+          <text x="130" y="146" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">undecided</text>
+          <text x="248" y="146" font-size="9.5" text-anchor="end" fill="var(--hl-slate)">against</text>
+          <text class="eg-v1" x="130" y="163" font-size="11.5" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Verdict: SUPPORTED &middot; belief 0.78</text>
+          <text class="eg-v2" x="130" y="163" font-size="11.5" font-weight="600" text-anchor="middle" fill="var(--hl-red)">Not enough information &rarr; ask the plain LLM</text>
+        </svg>
+      </div>
+      <div class="cap"><b>A verdict you can add up</b><span>Each fact gets a mass for, against or undecided; the masses are combined by a belief function, not by an LLM, and &ldquo;not enough information&rdquo; falls out of the sum.</span></div>
+    </a>
+
+    <a class="tile" href="#results">
+      <div class="vis">
+        <svg viewBox="0 0 260 170" role="img" aria-label="Animation: accuracy bars on the Answer benchmark grow one after another: GPT-4.1 alone 72.2, RAG 61.8, GraphRAG 52.7, ours 75.7.">
+          <text x="10" y="16" font-size="10" fill="var(--hl-slate)">Accuracy on the Answer benchmark, GPT-4.1 setting</text>
+          <text x="10" y="44" font-size="10.5" fill="var(--hl-ink)">GPT-4.1 alone</text>
+          <rect class="eg-b eg-b1" x="92" y="33" width="124" height="14" rx="3" fill="var(--hl-grey)"/>
+          <text class="eg-t eg-t1" x="220" y="44" font-size="10.5" fill="var(--hl-ink)">72.2</text>
+          <text x="10" y="74" font-size="10.5" fill="var(--hl-ink)">RAG</text>
+          <rect class="eg-b eg-b2" x="92" y="63" width="106" height="14" rx="3" fill="var(--hl-grey)"/>
+          <text class="eg-t eg-t2" x="202" y="74" font-size="10.5" fill="var(--hl-ink)">61.8</text>
+          <text x="10" y="104" font-size="10.5" fill="var(--hl-ink)">GraphRAG</text>
+          <rect class="eg-b eg-b3" x="92" y="93" width="90" height="14" rx="3" fill="var(--hl-grey)"/>
+          <text class="eg-t eg-t3" x="186" y="104" font-size="10.5" fill="var(--hl-ink)">52.7</text>
+          <text x="10" y="134" font-size="10.5" font-weight="600" fill="var(--hl-ink)">Ours (H-GBF)</text>
+          <rect class="eg-b eg-b4" x="92" y="123" width="130" height="14" rx="3" fill="var(--hl-red)"/>
+          <text class="eg-t eg-t4" x="226" y="134" font-size="10.5" font-weight="600" fill="var(--hl-red)">75.7</text>
+          <text class="eg-tag" x="92" y="158" font-size="11" font-weight="600" fill="var(--hl-red)">+3.6 points over GPT-4.1 alone</text>
+        </svg>
+      </div>
+      <div class="cap"><b>Ahead of GPT-4.1, RAG and GraphRAG on Answer</b><span>In the reported Answer comparison the fusion has the highest accuracy and macro-F1 of the four methods (point estimates on one benchmark; no significance test).</span></div>
+    </a>
+
+    <a class="tile" href="#boundary">
+      <div class="vis">
+        <svg viewBox="0 0 260 170" role="img" aria-label="Animation: three benchmarks appear in turn; as the share of retrieved facts that say nothing either way rises from 59% to 85% to 92%, the gain over GPT-4.1 alone falls from +3.6 to +0.9 to −0.5.">
+          <text x="130" y="14" font-size="10" text-anchor="middle" fill="var(--hl-slate)">retrieved facts: &#9679; for/against &nbsp;&#9675; say nothing</text>
+          <line x1="14" y1="108" x2="246" y2="108" stroke="var(--hl-line)" stroke-width="1"/>
+          <text x="246" y="104" font-size="9" text-anchor="end" fill="var(--hl-slate)">gain over GPT-4.1 alone</text>
+          <g class="eg-c eg-c1">
+            <g fill="var(--hl-ink)"><circle cx="23" cy="28" r="2.6"/><circle cx="29" cy="28" r="2.6"/><circle cx="35" cy="28" r="2.6"/><circle cx="41" cy="28" r="2.6"/></g>
+            <g fill="none" stroke="var(--hl-grey)" stroke-width="1.2"><circle cx="47" cy="28" r="2.6"/><circle cx="53" cy="28" r="2.6"/><circle cx="59" cy="28" r="2.6"/><circle cx="65" cy="28" r="2.6"/><circle cx="71" cy="28" r="2.6"/><circle cx="77" cy="28" r="2.6"/></g>
+            <rect class="eg-gain eg-gain1" x="36" y="58" width="28" height="50" fill="var(--hl-ink)"/>
+            <text x="50" y="124" font-size="10.5" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Answer</text>
+            <text x="50" y="138" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">59% say nothing</text>
+            <text x="50" y="154" font-size="11" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">+3.6</text>
+          </g>
+          <g class="eg-c eg-c2">
+            <g fill="var(--hl-ink)"><circle cx="103" cy="28" r="2.6"/><circle cx="109" cy="28" r="2.6"/></g>
+            <g fill="none" stroke="var(--hl-grey)" stroke-width="1.2"><circle cx="115" cy="28" r="2.6"/><circle cx="121" cy="28" r="2.6"/><circle cx="127" cy="28" r="2.6"/><circle cx="133" cy="28" r="2.6"/><circle cx="139" cy="28" r="2.6"/><circle cx="145" cy="28" r="2.6"/><circle cx="151" cy="28" r="2.6"/><circle cx="157" cy="28" r="2.6"/></g>
+            <rect class="eg-gain eg-gain2" x="116" y="96" width="28" height="12" fill="var(--hl-ink)"/>
+            <text x="130" y="124" font-size="10.5" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Gold</text>
+            <text x="130" y="138" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">85% say nothing</text>
+            <text x="130" y="154" font-size="11" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">+0.9</text>
+          </g>
+          <g class="eg-c eg-c3">
+            <g fill="var(--hl-ink)"><circle cx="183" cy="28" r="2.6"/></g>
+            <g fill="none" stroke="var(--hl-grey)" stroke-width="1.2"><circle cx="189" cy="28" r="2.6"/><circle cx="195" cy="28" r="2.6"/><circle cx="201" cy="28" r="2.6"/><circle cx="207" cy="28" r="2.6"/><circle cx="213" cy="28" r="2.6"/><circle cx="219" cy="28" r="2.6"/><circle cx="225" cy="28" r="2.6"/><circle cx="231" cy="28" r="2.6"/><circle cx="237" cy="28" r="2.6"/></g>
+            <rect class="eg-gain eg-gain3" x="196" y="108" width="28" height="7" fill="var(--hl-red)"/>
+            <text x="210" y="134" font-size="10.5" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Docs</text>
+            <text x="210" y="148" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">92% say nothing</text>
+            <text x="210" y="164" font-size="11" font-weight="600" text-anchor="middle" fill="var(--hl-red)">&minus;0.5</text>
+          </g>
+        </svg>
+      </div>
+      <div class="cap"><b>Noisy evidence, little or no gain</b><span>With GPT-4.1 the gain over the plain model falls to nothing as more retrieved facts say nothing either way; Gemma keeps a small gain even there. That share can be measured before any labels are known.</span></div>
+    </a>
+
+  </div>
+</section>
+
+<section class="meta">
+  <div class="grid">
+    <div>
+      <h5>Weblog author</h5>
+      <p><span class="me">Afshin Sadeghi</span></p>
+    </div>
+    <div>
+      <h5>Venue</h5>
+      <!-- TODO(author): add affiliations column if wanted. -->
+      <p>EACL 2027 (Findings)</p>
+    </div>
+    <div>
+      <h5>Topic</h5>
+      <p>Fact verification, knowledge graphs, Dempster–Shafer theory, abstention</p>
+    </div>
+    <div>
+      <h5>Models studied</h5>
+      <p>GPT-4.1</p>
+      <p>Gemma-4-31B-it</p>
+      <p>Llama-3.3-70B</p>
+    </div>
+  </div>
+  <div class="badges">
+    <span class="badge venue">EACL 2027 (Findings)</span>
+    <!-- Camera-ready PDF badge, add when available:
+    <a class="badge" href="../../papers/evidential-graph-reasoning.pdf">PDF</a> -->
+    <a class="badge" href="../../index.html#publications">All publications</a>
+  </div>
+</section>
+
+<main class="wrap">
+<article>
+
+  <div class="tldr">
+    <div class="lab">TL;DR</div>
+    <p>Retrieval-augmented fact checking usually hands the retrieved evidence to an LLM and takes whatever verdict comes back. How each fact influenced the verdict is not represented, and a verdict is returned even when the evidence is weak or conflicting.</p>
+    <p>We turn the evidence into a <b>knowledge graph of triples</b>, give each triple a graded <b>support or refutation</b> mass, combine the masses with an <b>explicit Dempster–Shafer calculation</b>, and <b>abstain</b> (defer to the no-retrieval LLM) when the combined mass supports neither verdict.</p>
+    <p>The result is selective, and the paper says so. With GPT-4.1, the full system has higher accuracy than raw-text RAG and adapted GraphRAG on all four benchmarks, and higher accuracy than the no-retrieval LLM on three. That advantage depends on the retrieved triples carrying <b>directional signal</b>: when they are mostly neutral, or point the wrong way, it disappears.</p>
+  </div>
+
+  <p class="toc">
+    <a href="#problem">1 Problem</a> <a href="#pipeline">2 Pipeline</a> <a href="#mass">3 Triple → mass</a> <a href="#fusion">4 Fusion playground</a>
+    <a href="#compound">5 Compound evidence</a> <a href="#results">6 Results</a> <a href="#boundary">7 When it works</a> <a href="#limits">8 Limitations</a> <a href="#new">What's new</a>
+  </p>
+
+  <!-- ============ 1 ============ -->
+  <h2 id="problem"><span class="num">1</span>A verdict nobody can audit</h2>
+  <p class="lede">In claim verification, a system reads a claim and some evidence and returns one of three outcomes: <b>confirmed</b>, <b>refuted</b>, or <b>not enough information</b> (NEI).</p>
+  <p>Retrieval-augmented generation (RAG) supplies the evidence as text. Graph-RAG supplies it as a retrieved subgraph of facts. In both, the facts are then passed back to an LLM that reasons over them in one generation step. Two things follow from that design.</p>
+  <ul>
+    <li>The influence of each individual fact on the verdict is not represented anywhere. You get a label and perhaps an explanation, but not a computation you can inspect.</li>
+    <li>LLMs tend to overcommit under uncertainty rather than abstain. In our setting, an LLM judge reading the retrieved triples as text commits on 100% of claims (its prompt offers an insufficient-evidence label, which it did not use in Table 4), including the ones where the triples carry no usable signal.</li>
+  </ul>
+
+  <div class="vs">
+    <div class="box">
+      <h4>LLM-as-judge over retrieved evidence</h4>
+      <div class="flow">claim + triples (as text) → LLM → verdict</div>
+      <ul>
+        <li>Each fact's contribution is hidden inside the generation.</li>
+        <li>Weak or conflicting evidence still gets a verdict.</li>
+        <li>No separate channel for “I do not know”.</li>
+      </ul>
+    </div>
+    <div class="box good">
+      <h4>Evidential Graph Reasoning (this paper)</h4>
+      <div class="flow">claim + triples → per-triple masses → fusion → verdict or abstain</div>
+      <ul>
+        <li>Each triple carries an explicit support / refute / ignorance mass.</li>
+        <li>Fusion is arithmetic you can trace back to single triples.</li>
+        <li>When <i>ignorance</i> has the largest fused mass, the symbolic layer abstains, and the final answer falls back to the no-retrieval LLM.</li>
+      </ul>
+    </div>
+  </div>
+  <p>The rest of this page walks through the method and lets you operate it. Everything labelled <b>illustrative</b> is a toy scenario made for this page. Everything labelled with a table number comes from the paper.</p>
+
+  <!-- ============ 2 ============ -->
+  <h2 id="pipeline"><span class="num">2</span>The pipeline, step by step</h2>
+  <p>The pipeline, laid out as in the paper's figure: documents and the user's claim are turned into a knowledge graph, the claim-related triples are retrieved and minimised to Steiner trees, each surviving triple is scored for direction and directness (E) and strength (W), the scores become belief masses at triple and subgraph level, and the graph belief function returns true, false or &ldquo;not enough information&rdquo;.</p>
+
+  <div class="widget pipe" id="pipe">
+    <div class="wtitle">Animated &middot; the pipeline of the paper</div>
+    <p class="wq">Each stage lights up in turn and shows what happens inside it</p>
+    <svg viewBox="0 0 760 375" role="img" aria-label="Animated version of the paper's pipeline figure: input documents and claim, graph extraction, reasoning over related triples in the evidence knowledge graph, extended triples, all-Steiner-trees graph minimising, refined related subgraphs, claim-related scoring of W and E, evidence context with triple-level and subgraph-level scores, the graph belief function, and the judgment True, False or NEI. Each box animates when its stage is active." id="pipeSvg"></svg>
+    <p class="note" id="pipeNote"></p>
+    <p class="src">Boxes and connections follow the pipeline figure of the paper; the drawings inside the boxes are schematic, and the paper's indirect entity identification, Wikidata enrichment and final two-hop pruning are not shown. The fused masses in the GBF box are computed for the four Figure-1 triples with the formulas of Sections 3 and 4.</p>
+  </div>
+
+  <p>Click through the seven steps for the details of each stage. The running example is the claim from Figure 1 of the paper: <i>“A greater proportion of 16–17-year-olds vote in elections in Scotland, Wales and Austria than 18- and 20-year-olds.”</i></p>
+
+  <div class="widget" id="stepper">
+    <div class="wtitle">Walkthrough</div>
+    <div class="steps" id="stepchips"></div>
+    <div class="stepbody">
+      <div><h4 id="stepTitle"></h4><div id="stepText"></div></div>
+      <div class="stepdemo" id="stepDemo"></div>
+    </div>
+    <div class="stepnav"><button class="btn ghost" id="stepPrev">← Back</button><button class="btn" id="stepNext">Next →</button></div>
+  </div>
+
+  <!-- ============ 3 ============ -->
+  <h2 id="mass"><span class="num">3</span>From a triple to a belief mass</h2>
+  <p>Each retrieved triple \(i\) is scored against the claim on two scales.</p>
+  <ul>
+    <li><b>Polarity</b> \(E_i\in\{-2,-1,0,+1,+2\}\): \(+2\) direct support, \(+1\) indirect support, \(0\) no directional evidence, \(-1\) indirect refutation, \(-2\) direct refutation.</li>
+    <li><b>Strength</b> \(W_i\in[0,1]\): how strongly the triple supports or refutes, whether that is direct or indirect. It is a property of the evidential relation, not the LLM's confidence in its own label.</li>
+  </ul>
+  <p>The frame of discernment is \(\Theta=\{C,R\}\) (Confirmed, Refuted). A triple becomes a basic belief assignment over \(\{C\}\), \(\{R\}\) and \(\Theta\) (ignorance):</p>
+  <div class="math-block">\[ m_i(\{C\})=\Big(\tfrac{\max(E_i,0)}{2}\Big)^{2}W_i,\qquad m_i(\{R\})=\Big(\tfrac{\max(-E_i,0)}{2}\Big)^{2}W_i,\qquad m_i(\Theta)=1-m_i(\{C\})-m_i(\{R\}). \]</div>
+  <p>Squaring the normalised amplitude makes indirect evidence four times weaker than direct evidence at the same strength. A neutral triple (\(E_i=0\)) puts all its mass on ignorance. It is the identity element of the flat combination: adding it leaves the fused result unchanged. Neutral triples can still take part in an informative compound (Section 5).</p>
+
+  <div class="widget narrow" id="massWidget">
+    <div class="wtitle">Try it</div>
+    <p class="wq">What mass does one triple carry?</p>
+    <div class="controls">
+      <label>Polarity E <span class="seg" id="mE"></span></label>
+      <label>Strength W <input type="range" id="mW" min="0" max="1" step="0.05" value="0.8"><output id="mWo">0.80</output></label>
+    </div>
+    <div class="sb big" id="mBar"></div>
+    <div class="legend"><span><i class="c"></i>m({C}) support</span><span><i class="r"></i>m({R}) refute</span><span><i class="t"></i>m(Θ) ignorance</span></div>
+    <div class="readout" id="mRead"></div>
+  </div>
+
+  <!-- ============ 4 ============ -->
+  <h2 id="fusion"><span class="num">4</span>Fusing evidence, and what happens to conflict</h2>
+  <p>With one mass per triple, the next job is to combine them. The paper uses <b>Yager's rule</b>. Where Dempster's rule normalises conflicting mass away, Yager's rule moves it to ignorance \(\Theta\). Dempster's normalisation can amplify a thin slice of agreement under high conflict; Yager's rule avoids that, at a cost discussed in Section 8.</p>
+  <p>The rule is applied in <b>n-ary batch form</b>: take three products over all triples at once, then reallocate the conflict once at the root.</p>
+  <div class="math-block">\[ s_C=\prod_i\big(m_i(\{C\})+m_i(\Theta)\big),\quad s_R=\prod_i\big(m_i(\{R\})+m_i(\Theta)\big),\quad s_\Theta=\prod_i m_i(\Theta), \]
+  \[ K=1-s_C-s_R+s_\Theta,\qquad m(\{C\})=s_C-s_\Theta,\quad m(\{R\})=s_R-s_\Theta,\quad m(\Theta)=s_\Theta+K. \]</div>
+  <p>The verdict is \(\hat y=\arg\max\big(m(\{C\}),m(\{R\}),m(\Theta)\big)\). When \(\Theta\) wins, the evidence is either too weak to commit or mutually contradictory, and no tuned threshold is involved. Because it is a single product over all sources, the result does not depend on the order of the triples.</p>
+
+  <div class="widget" id="play">
+    <div class="wtitle">Playground</div>
+    <p class="wq">Change the evidence and watch the verdict</p>
+    <div class="presets" id="presets"></div>
+    <div class="claimbox" id="claimBox"></div>
+    <div id="rows"></div>
+    <div class="controls" style="margin-top:10px">
+      <button class="btn ghost" id="addT">+ Add triple</button>
+      <button class="btn ghost" id="shuffleT">Shuffle order</button>
+      <label>Combination rule
+        <span class="seg" id="ruleSeg">
+          <button data-rule="yager" aria-pressed="true">Yager (paper)</button>
+          <button data-rule="dempster" aria-pressed="false">Dempster</button>
+          <button data-rule="smets" aria-pressed="false">Unnormalised</button>
+        </span>
+      </label>
+    </div>
+    <div class="fusedwrap">
+      <div>
+        <div class="sb big" id="fBar"></div>
+        <div class="legend" id="fLegend"></div>
+        <div class="nums" id="fNums"></div>
+        <div class="interval" id="fInt"></div>
+      </div>
+      <div>
+        <div class="verdict" id="fVerdict"></div>
+        <div class="readout" id="fNote" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="src" id="fSrc"></div>
+  </div>
+
+  <div class="callout">
+    <p><b>Things to try.</b> (1) Load <i>Conflicting</i> and switch between Yager and Dempster: Yager leaves most of the mass on ignorance and abstains, Dempster renormalises and commits to a near-coin-flip. (2) Load <i>Weak or neutral</i>: almost all mass is ignorance, so the system defers. (3) Press <i>Shuffle order</i> and check that nothing changes. (4) Read the “removing this triple” note under each row, which shows how much that single fact moved the net support.</p>
+  </div>
+  <p class="mono-note">The leave-one-out note is a diagnostic added for this page to make the “inspectable” claim concrete. It is not a procedure from the paper. Belief and plausibility intervals use the standard Dempster–Shafer definitions; the paper does not decide from them, because choosing between the two polar hypotheses on that basis would drop the explicit abstention option. The four-way verdict display here (Confirmed / Rejected / Abstain / Conflict dominates) is an illustration for this page; the deployed rule is the three-way argmax under Yager's rule.</p>
+
+  <!-- ============ 5 ============ -->
+  <h2 id="compound"><span class="num">5</span>Compound evidence: the hierarchical variant</h2>
+  <p>Flat fusion treats every triple as an independent source of equal standing. Knowledge graphs also contain patterns that a single product cannot represent. <b>H-GBF</b> adds a layer of compound nodes between triples and the root. An LLM <i>group identifier</i> proposes groups of triples with a type and a confidence \(\gamma_\varphi\); a type-specific operator then computes a bound \(\tilde m_\varphi\) from the children's masses.</p>
+  <div class="tablewrap"><table class="data" id="opTable">
+    <thead><tr><th>Operator</th><th>What it encodes</th><th>m̃({C})</th><th>m̃({R})</th></tr></thead>
+    <tbody>
+      <tr><td>Conjunction</td><td>all children must hold; one refutation breaks it</td><td>\(\prod_i m_i(C)\)</td><td>\(1-\prod_i(1-m_i(R))\)</td></tr>
+      <tr><td>Chain</td><td>as strong as the weakest link; strongest refutation propagates</td><td>\(\min_i m_i(C)\)</td><td>\(\max_i m_i(R)\)</td></tr>
+      <tr><td>Temporal</td><td>ordering relation (before/after/overlaps) between children, oriented as supporting or refuting the claim</td><td>\(\mu\) if it holds, else 0</td><td>0 if it holds, else \(\mu\)</td></tr>
+      <tr><td>Aggregation</td><td>soft-thresholded count of supporting children</td><td>\(a\)</td><td>\(\bar r\,(1-a)\)</td></tr>
+      <tr><td>Negation by absence</td><td>topic is covered but nothing supports the claim</td><td>0</td><td>\(\kappa\,(1-\max_i m_i(C))\)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mono-note">Here \(\mu=\min_i\big(m_i(C)+m_i(R)\big)\), \(a=\sigma\big(2(\sum_i m_i(C)-\tau_a)\big)\), \(\bar r=\tfrac1l\sum_i m_i(R)\), and \(\kappa\) is a proxy for coverage computed from the retrieved subgraph (the normalised count of refuting-polarity triples), with no extra model call; it is not a measure of completeness. In each case \(\tilde m_\varphi(\Theta)=1-\tilde m_\varphi(C)-\tilde m_\varphi(R)\), with the polar terms rescaled if they sum above 1.</p>
+  <p>For every type except chains, the compound's final mass mixes the operator bound with a direct LLM estimate, with a weight that depends on the confidence and on how undecided the bound is, and is then discounted by \(\gamma_\varphi\):</p>
+  <div class="math-block">\[ \lambda_\varphi=\gamma_\varphi\,\tilde m_\varphi(\Theta),\qquad m^{\mathrm{raw}}_\varphi(A)=\lambda_\varphi\,m^{\mathrm{LLM}}_\varphi(A)+(1-\lambda_\varphi)\,\tilde m_\varphi(A), \]
+  \[ m_\varphi(A)=\gamma_\varphi\,m^{\mathrm{raw}}_\varphi(A),\qquad A\in\{C,R\}. \]</div>
+  <p>So \(\gamma_\varphi\) enters twice, in the mixing weight and in the final discount, and a low-confidence grouping contributes mostly ignorance to the root. Chains skip the mixture and enforce the operator bound, so a direct LLM estimate cannot override a broken link. The root fuses all compound and orphan-leaf masses with the same Yager rule; a flat pipeline is the special case with no compounds. The picture of one layer between triples and the root is a simplification: the paper defines a DAG in which children can be shared and a compound can itself be a child.</p>
+
+  <div class="widget narrow" id="opWidget">
+    <div class="wtitle">Try it (illustrative children)</div>
+    <p class="wq">What does an operator do with three child BBAs (triples or compounds)?</p>
+    <div class="controls">
+      <label>Operator <span class="seg" id="opSeg">
+        <button data-op="conj" aria-pressed="true">Conjunction</button>
+        <button data-op="chain" aria-pressed="false">Chain</button>
+        <button data-op="agg" aria-pressed="false">Aggregation</button>
+        <button data-op="neg" aria-pressed="false">Neg. by absence</button>
+      </span></label>
+    </div>
+    <div class="opgrid">
+      <div id="opKids"></div>
+      <div>
+        <div id="opParams" class="controls"></div>
+        <div class="sb big" id="opBar"></div>
+        <div class="legend"><span><i class="c"></i>m̃({C})</span><span><i class="r"></i>m̃({R})</span><span><i class="t"></i>m̃(Θ)</span></div>
+        <div class="readout" id="opRead"></div>
+      </div>
+    </div>
+    <div class="src">Operator definitions: Table 1 and Appendix D. The Temporal operator is omitted here because it needs an LLM-assessed ordering relation. Parameter defaults: τ<sub>a</sub> = 1 (supplied by the group identifier in the paper). The widget computes the operator bound m̃ only, before the LLM mixture and the γ discount. A child with both m(C) &gt; 0 and m(R) &gt; 0 can only be a compound, not an atomic triple.</div>
+  </div>
+
+  <!-- ============ 6 ============ -->
+  <h2 id="results"><span class="num">6</span>Results</h2>
+  <p>We evaluate on AVeriTeC (three versions of its evidence collection, treated as three benchmarks of increasing difficulty) and PubHealth. <b>Answer</b> is a short passage addressing the claim. <b>Gold</b> is a related document with noisy and sometimes conflicting content. <b>Docs</b> is four background documents per claim, truncated at 12,000 characters each. <b>PubHealth</b> has one resource document per claim. All systems are scored on the same surviving claims within each benchmark.</p>
+  <p>Three baselines all let an LLM resolve the final verdict, so the comparison is like for like on the resolution mechanism. <b>Vanilla-LLM</b> is GPT-4.1 with no retrieval. <b>RAG</b> retrieves raw text passages. <b>GraphRAG (adapted-summary)</b> summarises the same Steiner-pruned subgraph with an LLM. <b>H-GBF (full)</b> is our hierarchical fusion plus deferral to the Vanilla-LLM prior on abstention.</p>
+
+  <div class="widget" id="resW">
+    <div class="wtitle">Table 3 · GPT-4.1 across four benchmarks</div>
+    <p class="wq">How does each method score?</p>
+    <div class="controls">
+      <label>Benchmark <span class="seg" id="resBench"></span></label>
+      <label>Metric <span class="seg" id="resMetric">
+        <button data-m="0" aria-pressed="true">Accuracy</button>
+        <button data-m="1" aria-pressed="false">Macro-F1</button>
+      </span></label>
+    </div>
+    <div id="resBars"></div>
+    <div class="readout" id="resRead"></div>
+    <div class="src" id="resSrc"></div>
+  </div>
+
+  <p class="takeaway">Reading the table: the pattern is mixed and tracks retrieval quality rather than method.</p>
+  <ul>
+    <li>H-GBF (full) has the highest accuracy on Gold, Answer and PubHealth, exceeding the no-retrieval baseline by 0.85, 3.56 and 0.68 points. On Answer it also has the best macro-F1.</li>
+    <li>On Docs it falls just below Vanilla-LLM on both metrics (−0.48 accuracy).</li>
+    <li>On PubHealth macro-F1 it is below Vanilla-LLM (54.03 against 56.45), and raw-text RAG has the best macro-F1 there (59.51), where the class distribution is most skewed.</li>
+    <li>RAG loses accuracy to the parametric prior on every benchmark. GraphRAG is weakest throughout and degrades sharply on Docs (24.11% accuracy), where the retrieved subgraph is largest and least directional.</li>
+  </ul>
+
+  <h3>Same triples, different decision layer</h3>
+  <p>Table 4 holds the retrieved triples fixed and changes only how they become a verdict, with no LLM fallback. The LLM judge reads the triples as text and commits on every claim. The two fusion methods abstain when the fused root puts its argmax on \(\Theta\), so their accuracy is <i>conditional on committing</i>. A row with lower accuracy but a much lower commit rate may simply be a more careful decoder, so read both numbers.</p>
+
+  <div class="widget" id="t4W">
+    <div class="wtitle">Table 4 · standalone verdict inference, no LLM fallback</div>
+    <p class="wq">Committed accuracy and commit rate</p>
+    <div class="controls"><label>Benchmark <span class="seg" id="t4Bench"></span></label></div>
+    <div id="t4Bars"></div>
+    <div class="readout" id="t4Read"></div>
+    <div class="src">Committed accuracy and commit rate (% of claims committed) from Table 4. Macro-F1 on the same claims (LLM judge / flat fusion / hierarchy) from Appendix G.1.</div>
+  </div>
+
+  <p>On Gold, Answer and Docs, belief-function aggregation achieves higher committed accuracy than the LLM judge on identical triples, and the hierarchy raises the commit rate on Docs from 32.9% to 55.6% while committed accuracy rises from 55.10 to 70.98. On PubHealth the hierarchy <i>lowers</i> committed accuracy (69.03 → 63.27), which the paper reads as structured aggregation over misleading evidence leading to wrong symbolic commitments.</p>
+
+  <h3>Other language models</h3>
+  <p>Keeping the GPT-4.1 knowledge graphs fixed, we rerun triple scoring and group identification with two open-weight models. Gains over each model's own no-retrieval baseline transfer to Gemma in accuracy on all four benchmarks, but are smaller or absent with Llama-3.3-70B.</p>
+
+  <div class="widget" id="xW">
+    <div class="wtitle">Table 11 · cross-LLM results</div>
+    <p class="wq">Vanilla-LLM vs H-GBF (full), per model</p>
+    <div class="controls">
+      <label>Benchmark <span class="seg" id="xBench"></span></label>
+      <label>Metric <span class="seg" id="xMetric">
+        <button data-m="0" aria-pressed="true">Accuracy</button>
+        <button data-m="1" aria-pressed="false">Macro-F1</button>
+      </span></label>
+    </div>
+    <div id="xBars"></div>
+    <div class="src">Table 11 of the paper labels the Gemma rows “Gemma-27B”; the main text names the model Gemma-4-31B-it. The limiting factor with Llama-3.3-70B is compound construction: it emits at least one compound for only 7.3%, 19.2% and 2.0% of claims on Gold, Answer and Docs, against about 96% for GPT-4.1, so H-GBF there reduces to flat fusion plus deferral.</div>
+  </div>
+
+  <!-- ============ 7 ============ -->
+  <h2 id="boundary"><span class="num">7</span>When fusion helps, and when it does not</h2>
+  <p>The central finding is what the paper calls a <b>retrieval-binding boundary</b>. Symbolic fusion improves accuracy over a strong no-retrieval baseline only when the retrieved triples carry directional signal. Two properties of the retrieved evidence, shown in Table 2, bound what any fusion method can recover.</p>
+  <ul>
+    <li><b>Neutral-triple rate</b>: the share of matched triples with \(E_i=0\). These add no direction. It is observable without labels.</li>
+    <li><b>Misleading claims</b>: the share of claims whose majority retrieved polarity opposes the gold label (for CONF and REJ), or is non-neutral when the label is NEI. This needs labels, so it is only a retrospective diagnostic.</li>
+  </ul>
+
+  <div class="widget" id="lensW">
+    <div class="wtitle">Tables 2, 3, 6, 8 · evidence quality against outcome</div>
+    <p class="wq">What does the retrieved evidence look like on each benchmark?</p>
+    <div class="controls"><label>Benchmark <span class="seg" id="lensBench"></span></label></div>
+    <div class="lens" id="lensCards"></div>
+    <div class="readout" id="lensRead"></div>
+    <div class="src">Differences are H-GBF (full) minus Vanilla-LLM with GPT-4.1 (Table 3). Four benchmarks are too few to fit a relationship; this is the paper's qualitative reading, not a regression.</div>
+  </div>
+
+  <h3>Two different ways to be unhelpful</h3>
+  <p><b>Misleading evidence (PubHealth).</b> H-GBF slightly improves accuracy over Vanilla-LLM (67.75 against 67.07) but loses macro-F1. Both systems commit polar verdicts, by different routes. Vanilla-LLM can override the face-value polarity of retrieved facts using what it already knows. H-GBF encodes that polarity into the masses and commits by argmax over the fused result. Nearly half of refuted PubHealth claims (49.7%) have a majority of retrieved evidence that supports them, so the fusion commits mass on wrong-signed evidence. Deferral cannot repair this, because it fires only when the fusion abstains.</p>
+  <p><b>Absent signal (Docs).</b> Here the evidence is dominated by neutral triples (91.6% of matched triples), although misleading polar evidence also occurs (33.5% of refuted Docs claims). Deferring to the parametric prior is the right response for the neutral part, and H-GBF (full) defers on the remaining 44.4% of claims. Standalone H-GBF still reaches 70.98% committed accuracy at a 55.6% commit rate, so the hierarchy does find a subset where it can commit with high precision. The full system gains little, because the remaining claims mostly defer to an already strong prior. The paper's reading is that the limitation on Docs is insufficient directional coverage, not low committed precision.</p>
+
+  <div class="widget narrow">
+    <div class="wtitle">See it in the playground (illustrative)</div>
+    <p class="wq" style="font-size:17px">A toy version of each failure mode</p>
+    <div class="controls">
+      <button class="btn ghost" data-load="misleading">Load: misleading evidence</button>
+      <button class="btn ghost" data-load="weak">Load: weak or neutral evidence</button>
+    </div>
+    <div class="mono-note">Both buttons load a made-up scenario into the playground above and scroll back to it. They illustrate the mechanism; they are not drawn from the benchmarks.</div>
+  </div>
+
+  <p>The practical reading: the neutral-triple rate and polar coverage are cheap, label-free screens for whether retrieval gives fusion anything to work with, whereas wrong-signed evidence can only be found afterwards on labelled data.</p>
+
+  <!-- ============ 8 ============ -->
+  <h2 id="limits"><span class="num">8</span>Limitations the paper states</h2>
+  <ul>
+    <li><b>Yager's rule conflates conflict with ignorance.</b> The deployed decision rule cannot tell an absence of evidence from strong contradictory evidence using the root masses alone. Recomputing the pre-redistribution conflict \(K\) per claim shows this is not negligible: on PubHealth it averages 0.21 overall and 0.72 on the disagreement subset (claims with at least two positively and two negatively scored triples), of which 79.6% resolve to abstention. An unnormalised formulation (the third rule in the playground) separates the two states measurably on PubHealth (Cohen's d = 0.42) but not on the other three benchmarks, and no decision rule built on that separation improved macro-F1 within confidence intervals.</li>
+    <li><b>The masses are not calibrated.</b> They are built from language-model polarity scores that are not checked against observed reliability, so a mass of 0.8 does not mean the triple supports the claim in 80% of such cases. Calibrating them would need a model trained specifically for triple-level evidential scoring.</li>
+    <li><b>Independence is assumed.</b> The product form treats sources as distinct bodies of evidence, which retrieved evidence does not always satisfy. Duplicated triples can inflate support. Cosine discounting and near-duplicate clustering did not help; limiting the number of fused sources with per-polarity root filtering did.</li>
+    <li><b>Performance is bounded by the group identifier.</b> The gains transfer to Gemma but not to Llama-3.3-70B, which rarely emits compounds.</li>
+    <li><b>The advantage is selective</b> across benchmarks, models and metrics, as the results above show.</li>
+    <li><b>Inspectability is conditional.</b> Explicit arithmetic makes the aggregation traceable, but the extracted facts, their polarity scores and the compound groupings come from an LLM and are not validated by the fusion.</li>
+  </ul>
+
+  <div class="widget narrow" id="kTable">
+    <div class="wtitle">Table 8 · recomputed conflict mass K</div>
+    <p class="wq" style="font-size:17px">How much conflict does Yager's rule absorb into ignorance?</p>
+    <div class="tablewrap" style="margin:6px 0 0"><table class="data">
+      <thead><tr><th>Benchmark</th><th>n</th><th>mean K</th><th>K = 0</th><th>n (disagree)</th><th>mean K</th><th>→ NEI</th></tr></thead>
+      <tbody>
+        <tr><td>Gold</td><td>565</td><td>0.16</td><td>70.3%</td><td>99</td><td>0.68</td><td>78.8%</td></tr>
+        <tr><td>Answer</td><td>785</td><td>0.03</td><td>91.8%</td><td>18</td><td>0.51</td><td>88.9%</td></tr>
+        <tr><td>Docs</td><td>879</td><td>0.11</td><td>78.4%</td><td>119</td><td>0.64</td><td>74.8%</td></tr>
+        <tr class="hl"><td>PubHealth</td><td>1116</td><td>0.21</td><td>63.7%</td><td>240</td><td>0.72</td><td>79.6%</td></tr>
+      </tbody>
+    </table></div>
+    <div class="src">Left block: all claims with at least one matched triple. Right block: the disagreement subset, with at least two positively and two negatively scored triples. “→ NEI” is the share resolving to abstention under the deployed argmax rule.</div>
+  </div>
+
+  <h2 id="new" style="font-size:24px">What this paper adds</h2>
+  <div class="callout">
+    <ul class="tight" style="margin-bottom:12px">
+      <li><b>The symbolic verdict is computed by explicit fusion.</b> The decompositional, graph-based RAG and path-based methods discussed in the paper surface which facts or subgraph support an answer, then hand the combination back to an LLM. Here each retrieved triple becomes a basic belief assignment over {confirmed, refuted, ignorance}, compositional graph operators aggregate them over a hierarchy, and a verdict or abstention rule reads the fused mass. A committed verdict can be traced back to the triples that produced it; in the full system an abstention is resolved by the no-retrieval LLM, so only the symbolic part is computed.</li>
+      <li><b>&ldquo;Not enough information&rdquo; falls out of the calculus.</b> Ignorance is an explicit mass that commits to neither side, so the NEI outcome comes from the fusion itself rather than from a tuned confidence threshold, and abstention is a visible state instead of something hidden in a generation step. When the system abstains it defers to the no-retrieval LLM.</li>
+      <li><b>On the same triples, fusion is more accurate on the claims it commits to, while abstaining on the others.</b> With retrieval held fixed and no LLM fallback, committed accuracy is higher than that of the LLM judge, which answers every claim, on Gold, Answer and Docs, and the hierarchy raises the Docs commit rate from 32.9% to 55.6% while committed accuracy rises from 55.10 to 70.98.</li>
+      <li><b>Higher reported accuracy than raw-text RAG and adapted GraphRAG in all four GPT-4.1 settings</b>, and highest accuracy of all methods on Gold, Answer and PubHealth (+0.85, +3.56 and +0.68 points over the no-retrieval baseline). The gains over each model's own no-retrieval baseline transfer to Gemma on all four benchmarks (point estimates; no significance tests are reported).</li>
+      <li><b>A retrieval-binding boundary, with a label-free screen.</b> Symbolic fusion helps when retrieved triples carry directional signal and stops helping when they are mostly neutral or frequently wrong-signed. Neutral-triple rate and polar coverage can be read without labels and show in advance whether the retrieved evidence carries any direction at all; they are a diagnostic, not a guarantee of a gain, and wrong-signed evidence can only be diagnosed afterwards on labelled data.</li>
+    </ul>
+    <p class="takeaway">Combining evidence with belief functions makes a fact check auditable and gives abstention a principled home, but it cannot repair evidence that points the wrong way.</p>
+  </div>
+
+  <h2 id="cite" style="font-size:24px">Cite</h2>
+  <!-- TODO(author): fill in the full author list and add pages/DOI after camera-ready. -->
+  <div class="bibbox">@inproceedings{sadeghi2027evidential,
+  title     = {Evidential Graph Reasoning for LLM Factuality:
+               A Belief-Function Fusion of Retrieved Triples},
+  author    = {Sadeghi, Afshin and others},
+  booktitle = {Findings of the Association for Computational
+               Linguistics: EACL 2027},
+  year      = {2027},
+}</div>
+  <p class="mono-note">All numbers on this page are taken from the submitted paper text (tables referenced in each figure caption). Scenarios labelled illustrative are toy examples written for this page.</p>
+
+</article>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>© 2026 Afshin Sadeghi</span>
+    <span><a href="../../index.html#research">← Back to research</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const f2=x=>(Math.round(x*100)/100).toFixed(2);
+const f3=x=>x.toFixed(3);
+const pct=x=>(x*100).toFixed(1)+'%';
+function bar(parts,big){return '<div class="sb'+(big?' big':'')+'">'+parts.map(p=>'<i class="'+p[0]+'" style="width:'+Math.max(0,p[1]*100).toFixed(2)+'%"></i>').join('')+'</div>';}
+
+/* ---- reading progress ---- */
+const rb=$('#rbar');
+function onScroll(){const h=document.documentElement;const m=h.scrollHeight-h.clientHeight;rb.style.width=(m>0?100*h.scrollTop/m:0)+'%';}
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+/* ---- core math (Section 3.2 of the paper) ---- */
+function bba(E,W){const c=Math.pow(Math.max(E,0)/2,2)*W, r=Math.pow(Math.max(-E,0)/2,2)*W;return {C:c,R:r,T:1-c-r};}
+function fuse(list,rule){
+  let sC=1,sR=1,sT=1;
+  for(const b of list){sC*=b.C+b.T;sR*=b.R+b.T;sT*=b.T;}
+  let K=1-sC-sR+sT; if(K<0&&K>-1e-12)K=0;
+  const mC=sC-sT, mR=sR-sT;
+  if(rule==='dempster'){const z=1-K; if(z<1e-12)return {C:NaN,R:NaN,T:NaN,E:0,K,undef:true}; return {C:mC/z,R:mR/z,T:sT/z,E:0,K};}
+  if(rule==='smets')return {C:mC,R:mR,T:sT,E:K,K};
+  return {C:mC,R:mR,T:sT+K,E:0,K};
+}
+function decide(m){
+  if(m.undef)return 'T';
+  const e=m.E||0; // only non-zero under the unnormalised rule
+  if(e>m.C&&e>m.R&&e>m.T)return 'E';
+  if(m.C===m.R&&m.C>m.T)return 'X'; // exact tie between the polar masses: the paper does not specify tie-breaking
+  return (m.C>m.R&&m.C>m.T)?'C':(m.R>m.C&&m.R>m.T)?'R':'T';
+}
+
+/* ---- 2. stepper ---- */
+const EX=[
+  ['(turnout, is_higher_than, older_first-time_voters)',+2,0.90],
+  ['(16-17-year-olds, exhibit, high_external_efficacy)',+1,0.55],
+  ['(16-17-year-olds, exhibit, lower_interest_in_politics)',-2,0.85],
+  ['(16-17-year-olds, report, lower_satisfaction_with_democracy)',-1,0.45]
+];
+const steps=[
+ {n:'Build graphs',t:'Claim and evidence become triples',
+  p:'<p>An LLM (GPT-4.1, few-shot chain-of-thought prompt) extracts (subject, relation, object) triples from the evidence documents and from the claim, with subjects and objects restricted to named entities. The claim\'s graph tells us which parts of the evidence graph matter.</p>',
+  d:()=>'<div class="mono" style="color:var(--muted)">claim →</div><div class="mono">(16-17-year-olds, vote_in, Scotland)<br>(16-17-year-olds, vote_in, Wales)<br>(16-17-year-olds, vote_in, Austria)</div><div class="mono" style="color:var(--muted);margin-top:8px">evidence →</div><div class="mono">(turnout, is_higher_than, older_first-time_voters)<br>(16-17-year-olds, exhibit, lower_interest_in_politics)<br>…</div><div class="mono-note" style="margin-top:8px">Triples shown for illustration; the two evidence triples are from Figure 1 of the paper.</div>'},
+ {n:'Retrieve',t:'Find the claim-relevant subgraph',
+  p:'<p>Entities are matched between claim graph and evidence graph by cosine similarity of text embeddings (Qwen3-Embedding-0.6B, threshold 0.60). Matched entities and their neighbours form a context graph, which is pruned to a connected subgraph by All-Steiner-trees minimisation.</p><p>How much survives depends on the benchmark: matching removes 87–88% of extracted triples on Gold and Docs but only 13% on Answer, whose evidence is written in direct response to the claim.</p><p>Simplified here: the paper also identifies indirect entities, enriches the graph from Wikidata and applies a final two-hop pruning.</p>',
+  d:()=>{const rows=[['Gold','207,342','27,073','86.9%'],['Answer','4,780','4,153','13.1%'],['Docs','686,718','81,040','88.2%'],['PubHealth','75,709','19,364','74.4%']];return '<div class="mono-note" style="margin-bottom:4px">Table 6 (τ = 0.60)</div><table><tr><th>Bench.</th><th>Extracted</th><th>Matched</th><th>Pruned</th></tr>'+rows.map(r=>'<tr><td>'+r.join('</td><td>')+'</td></tr>').join('')+'</table>';}},
+ {n:'Score',t:'Score each triple against the claim',
+  p:'<p>Each matched triple gets a polarity <b>E</b> from −2 to +2 and a strength <b>W</b> from 0 to 1. Neutral triples (E = 0) are kept: each puts all its mass on ignorance and leaves flat fusion unchanged, but it can still take part in a compound.</p>',
+  d:()=>'<table><tr><th>Triple</th><th>E</th><th>W</th></tr>'+EX.map(r=>'<tr><td class="mono">'+r[0]+'</td><td>'+(r[1]>0?'+':'')+r[1]+'</td><td>'+r[2].toFixed(2)+'</td></tr>').join('')+'</table><div class="mono-note" style="margin-top:6px">E and W as in Figure 1 of the paper.</div>'},
+ {n:'Masses',t:'Turn each score into a belief mass',
+  p:'<p>The squared-amplitude construction gives each triple masses on support, refutation and ignorance. Indirect evidence (|E| = 1) ends up four times weaker than direct evidence (|E| = 2) at equal strength.</p>',
+  d:()=>'<table><tr><th>E, W</th><th>m(C)</th><th>m(R)</th><th>m(Θ)</th></tr>'+EX.map(r=>{const b=bba(r[1],r[2]);return '<tr><td>'+(r[1]>0?'+':'')+r[1]+', '+r[2].toFixed(2)+'</td><td>'+f3(b.C)+'</td><td>'+f3(b.R)+'</td><td>'+f3(b.T)+'</td></tr>';}).join('')+'</table><div class="mono-note" style="margin-top:6px">Computed from the formula in Section 3.</div>'},
+ {n:'Compounds',t:'Group triples that only mean something together (H-GBF)',
+  p:'<p>An LLM group identifier looks for groups whose <i>combination</i> carries evidence no single triple carries: conjunctions, chains, temporal orderings, counts, and “covered but unsupported” patterns. It emits a typed compound with a confidence. Chains are the exception to the mixing rule of Section 5: a chain enforces its operator bound, so a direct LLM estimate cannot override a broken link. Triples that are already decisive stay as orphan leaves. If it finds nothing, the pipeline is the flat special case.</p>',
+  d:()=>'<div style="margin-bottom:6px"><span class="chip c">conjunction</span><span class="chip c">chain</span><span class="chip c">temporal</span><span class="chip c">aggregation</span><span class="chip r">negation by absence</span></div><div class="mono-note">Each compound node gets a mass from a type-specific operator, mixed with the group identifier\'s own estimate and discounted by its confidence γ. See Section 5.</div>'},
+ {n:'Fuse',t:'Combine everything at the root with Yager\'s rule',
+  p:'<p>All root masses are fused in one n-ary step, so the result does not depend on the order of the evidence. Conflicting mass is moved to ignorance rather than normalised away. An optional filter keeps only the k strongest support and k strongest refutation masses (k = 1 on Gold, 4 on Docs, off on Answer and PubHealth) to limit inflation from many weak, same-direction sources.</p>',
+  d:()=>{const m=fuse(EX.map(r=>bba(r[1],r[2])),'yager');return bar([['c',m.C],['r',m.R],['t',m.T]],true)+'<div class="nums n3"><div><small>m(C)</small><b class="k-c">'+f2(m.C)+'</b></div><div><small>m(R)</small><b class="k-r">'+f2(m.R)+'</b></div><div><small>m(Θ)</small><b class="k-t">'+f2(m.T)+'</b></div></div><div class="mono-note">Yager rule applied to the four triples above (flat, no compounds). K = '+f2(m.K)+'.</div>';}},
+ {n:'Decide',t:'Commit, or abstain and defer',
+  p:'<p>The verdict is the argmax of the three fused masses. If ignorance wins, the evidence is either too weak or too contradictory, so the symbolic layer returns NEI. In the full system that abstention is <b>deferred</b> to the no-retrieval LLM, which sees the claim without retrieved evidence. Deferral is unconditional: ignorance-driven abstentions outnumber conflict-driven ones 3–6 to 1 on the deferred subset, and the prior resolves 72–79% of them correctly.</p>',
+  d:()=>{const m=fuse(EX.map(r=>bba(r[1],r[2])),'yager');const v=decide(m);return '<div class="verdict '+v+'"><div class="vl">Symbolic verdict</div><div class="vv">'+(v==='T'?'Abstain (NEI)':v==='C'?'CONFIRMED':v==='R'?'REJECTED':'Tie')+'</div>'+(v==='T'?'Most mass sits on ignorance, so the full system defers to the Vanilla-LLM prior.':v==='X'?'Support and refutation are exactly equal; the paper does not specify tie-breaking.':'The largest fused mass commits.')+'</div>';}}
+];
+let si=0;
+const chips=$('#stepchips');
+steps.forEach((s,i)=>{const b=document.createElement('button');b.innerHTML='<b>'+(i+1)+'</b>'+s.n;b.addEventListener('click',()=>{si=i;renderStep();});chips.appendChild(b);});
+function renderStep(){
+  const s=steps[si];
+  $$('button',chips).forEach((b,i)=>{b.classList.toggle('on',i===si);b.classList.toggle('done',i<si);});
+  $('#stepTitle').textContent=s.t; $('#stepText').innerHTML=s.p; $('#stepDemo').innerHTML=s.d();
+  $('#stepPrev').disabled=si===0; $('#stepNext').disabled=si===steps.length-1;
+  $('#stepPrev').style.opacity=si===0?.4:1; $('#stepNext').style.opacity=si===steps.length-1?.4:1;
+}
+$('#stepPrev').addEventListener('click',()=>{if(si>0){si--;renderStep();}});
+$('#stepNext').addEventListener('click',()=>{if(si<steps.length-1){si++;renderStep();}});
+renderStep();
+
+/* ---- 3. single triple widget ---- */
+let mE=2;
+const mESeg=$('#mE');
+[-2,-1,0,1,2].forEach(e=>{const b=document.createElement('button');b.textContent=(e>0?'+':'')+e;b.dataset.e=e;b.setAttribute('aria-pressed',e===mE);b.addEventListener('click',()=>{mE=e;updMass();});mESeg.appendChild(b);});
+function updMass(){
+  $$('button',mESeg).forEach(b=>b.setAttribute('aria-pressed',+b.dataset.e===mE));
+  const W=+$('#mW').value; $('#mWo').textContent=W.toFixed(2);
+  const b=bba(mE,W);
+  $('#mBar').innerHTML=[['c',b.C],['r',b.R],['t',b.T]].map(p=>'<i class="'+p[0]+'" style="width:'+(p[1]*100).toFixed(2)+'%"></i>').join('');
+  let txt='<b class="k-c">m(C) = '+f3(b.C)+'</b> &nbsp; <b class="k-r">m(R) = '+f3(b.R)+'</b> &nbsp; <b class="k-t">m(Θ) = '+f3(b.T)+'</b>';
+  if(mE===0)txt+='<br>Neutral triple: all mass is ignorance, whatever W is.';
+  else if(Math.abs(mE)===1){const d=bba(2*Math.sign(mE),W);const own=mE>0?b.C:b.R, dir=mE>0?d.C:d.R;txt+='<br>Indirect evidence: '+f3(own)+' against '+f3(dir)+' for direct evidence at the same W, a factor of '+(dir>0?(dir/own).toFixed(0):'–')+'.';}
+  else txt+='<br>Direct evidence: the polar mass equals W.';
+  $('#mRead').innerHTML=txt;
+}
+$('#mBar').className='sb big';
+$('#mW').addEventListener('input',updMass); updMass();
+
+/* ---- 4. playground ---- */
+const PRESETS={
+ fig1:{name:'Paper Figure 1',claim:'A greater proportion of 16-17-year-olds vote in elections in Scotland, Wales and Austria than 18- and 20-year-olds.',
+   src:'Triples, polarity E and strength W are those shown in Figure 1 of the paper. Masses are computed live from the formulas of Section 3.2; the paper\'s Figure 1 is a schematic: the masses it displays (0.34 / 0.31 / 0.35) are illustrative and are not the flat-fusion result of these four triples, which is 0.12 / 0.07 / 0.80; both abstain. The figure\'s claim text says 16-year-olds while its triples say 16–17-year-olds; this page uses the latter.',
+   gold:null,t:EX.map(r=>({t:r[0],E:r[1],W:r[2]}))},
+ agree:{name:'Agreeing evidence',claim:'The Pacific is the largest ocean.',src:'Illustrative toy scenario made for this page.',gold:'C',
+   t:[{t:'(Pacific_Ocean, has_larger_area_than, Atlantic_Ocean)',E:2,W:.9},{t:'(Pacific_Ocean, is_largest, ocean)',E:2,W:.8},{t:'(Atlantic_Ocean, covers_less_area_than, Pacific_Ocean)',E:1,W:.6}]},
+ conflict:{name:'Conflicting',claim:'Company X was founded in 1998.',src:'Illustrative toy scenario made for this page.',gold:null,
+   t:[{t:'(Company_X, founded_in, 1998)',E:2,W:.9},{t:'(Company_X, established_in, 2003)',E:-2,W:.9},{t:'(Company_X, early_history_mentions, 1990s)',E:1,W:.4}]},
+ weak:{name:'Weak or neutral',claim:'City Y banned cars from its centre in 2019.',src:'Illustrative toy scenario made for this page. Docs-like: on Docs, 91.6% of matched triples are neutral (Table 2).',gold:null,
+   t:[{t:'(City_Y, has_population, 800000)',E:0,W:.5},{t:'(City_Y, located_in, Region_Z)',E:0,W:.6},{t:'(City_Y, hosted, trade_fair)',E:0,W:.4},{t:'(City_Y, mayor_discussed, transport_plan)',E:1,W:.3},{t:'(City_Y, has_river, River_W)',E:0,W:.7}]},
+ misleading:{name:'Misleading',claim:'Vitamin Q reduces the duration of common colds.',src:'Illustrative toy scenario made for this page: the retrieved triples are mostly wrong-signed with respect to the true label.',gold:'C',
+   t:[{t:'(Vitamin_Q, showed_no_effect_in, small_trial)',E:-2,W:.8},{t:'(Vitamin_Q, effect_unclear_in, review_2012)',E:-1,W:.7},{t:'(Vitamin_Q, reduced, symptom_duration)',E:1,W:.4},{t:'(Vitamin_Q, not_recommended_by, clinic_A)',E:-1,W:.6}]}
+};
+let cur={key:'fig1',rows:[],rule:'yager',gold:null};
+const presetsEl=$('#presets');
+Object.keys(PRESETS).forEach(k=>{const b=document.createElement('button');b.className='btn ghost';b.textContent=PRESETS[k].name;b.dataset.k=k;b.addEventListener('click',()=>loadPreset(k));presetsEl.appendChild(b);});
+function loadPreset(k){
+  const p=PRESETS[k];cur.key=k;cur.rows=p.t.map(x=>({...x}));cur.gold=p.gold;
+  $$('button',presetsEl).forEach(b=>{const on=b.dataset.k===k;b.className=on?'btn':'btn ghost';});
+  $('#claimBox').innerHTML='<b>Claim:</b> '+p.claim+(p.gold?'<small>Gold label for this scenario: '+(p.gold==='C'?'CONFIRMED':'REJECTED')+'</small>':'');
+  $('#fSrc').textContent=p.src;
+  renderRows();update();
+}
+function renderRows(){
+  const host=$('#rows');host.innerHTML='';
+  cur.rows.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='trow';
+    d.innerHTML='<div><div class="tt"></div><div class="loo"></div></div>'+
+      '<div><span class="seg">'+[-2,-1,0,1,2].map(e=>'<button data-e="'+e+'" aria-pressed="'+(e===r.E)+'">'+(e>0?'+':'')+e+'</button>').join('')+'</span></div>'+
+      '<div><div class="wc"><input type="range" min="0" max="1" step="0.05" value="'+r.W+'" aria-label="Strength W"><output class="val">'+r.W.toFixed(2)+'</output></div></div>'+
+      '<div><div class="msb"></div><div class="mm"></div></div>'+
+      '<button class="x" title="Remove triple" aria-label="Remove triple">×</button>';
+    $('.tt',d).textContent=r.t;
+    $$('.seg button',d).forEach(b=>b.addEventListener('click',()=>{r.E=+b.dataset.e;$$('.seg button',d).forEach(x=>x.setAttribute('aria-pressed',x===b));update();}));
+    $('input',d).addEventListener('input',e=>{r.W=+e.target.value;$('output',d).textContent=r.W.toFixed(2);update();});
+    $('.x',d).addEventListener('click',()=>{cur.rows.splice(i,1);renderRows();update();});
+    host.appendChild(d);
+  });
+}
+function net(m){return m.C-m.R;}
+function update(){
+  const bl=cur.rows.map(r=>bba(r.E,r.W));
+  const m=fuse(bl,cur.rule);
+  const rowEls=$$('#rows .trow');
+  rowEls.forEach((d,i)=>{
+    const b=bl[i];
+    $('.msb',d).className='msb sb';$('.msb',d).innerHTML=[['c',b.C],['r',b.R],['t',b.T]].map(p=>'<i class="'+p[0]+'" style="width:'+(p[1]*100).toFixed(1)+'%"></i>').join('');
+    $('.mm',d).innerHTML='<span class="k-c">C '+f2(b.C)+'</span><span class="k-r">R '+f2(b.R)+'</span><span class="k-t">Θ '+f2(b.T)+'</span>';
+    // leave-one-out contribution to net support m(C)-m(R)
+    const rest=bl.filter((_,j)=>j!==i);const mo=fuse(rest,cur.rule);
+    if(m.undef||mo.undef){$('.loo',d).textContent='';}
+    else{const dv=net(m)-net(mo);const s=(dv>=0?'+':'−')+Math.abs(dv).toFixed(3);
+      $('.loo',d).innerHTML='removing this triple changes m(C) − m(R) by <b style="font-family:var(--mono)">'+(dv>=0?'−':'+')+Math.abs(dv).toFixed(3)+'</b> &nbsp;(this triple contributes '+s+')';}
+  });
+  // fused display
+  const names={yager:'Yager',dempster:'Dempster',smets:'Unnormalised'};
+  const legend=['<span><i class="c"></i>m({C})</span>','<span><i class="r"></i>m({R})</span>','<span><i class="t"></i>m(Θ)'+(cur.rule==='yager'?' = ignorance + conflict':'')+'</span>'];
+  if(cur.rule==='smets')legend.push('<span><i class="e"></i>m(∅) conflict</span>');
+  $('#fLegend').className='legend';$('#fLegend').innerHTML=legend.join('');
+  const fb=$('#fBar');
+  if(m.undef){fb.className='sb big';fb.innerHTML='';}
+  else{fb.className='sb big';fb.innerHTML=[['c',m.C],['r',m.R],['t',m.T],['e',m.E]].map(p=>'<i class="'+p[0]+'" style="width:'+(p[1]*100).toFixed(2)+'%"></i>').join('');}
+  const nums=$('#fNums');nums.className='nums';
+  nums.innerHTML=m.undef?'<div style="grid-column:1/-1"><small>Dempster</small><b>undefined</b></div>':
+    '<div><small>m(C)</small><b class="k-c">'+f2(m.C)+'</b></div><div><small>m(R)</small><b class="k-r">'+f2(m.R)+'</b></div><div><small>m(Θ)</small><b class="k-t">'+f2(m.T)+'</b></div>'+
+    (cur.rule==='smets'?'<div><small>m(∅)</small><b class="k-e">'+f2(m.E)+'</b></div>':'<div><small>conflict K</small><b class="k-e">'+f2(m.K)+'</b></div>');
+  // intervals
+  if(m.undef)$('#fInt').innerHTML='';
+  else $('#fInt').innerHTML=['C','R'].map(h=>{const bel=m[h],pl=m[h]+m.T;const col=h==='C'?'var(--accent)':'var(--warm)';
+    return '<div>'+(h==='C'?'Confirmed':'Refuted')+': belief '+f2(bel)+', plausibility '+f2(pl)+'<div class="track"><i style="left:'+(bel*100)+'%;width:'+Math.max(0.8,(pl-bel)*100)+'%;background:'+col+'"></i></div></div>';}).join('');
+  // verdict
+  const v=decide(m);const vb=$('#fVerdict');vb.className='verdict '+v;
+  let vt=v==='C'?'CONFIRMED':v==='R'?'REJECTED':v==='E'?'Conflict dominates':v==='X'?'Tie between support and refutation':'Abstain (NEI)';
+  let sub='';
+  if(m.undef)sub='Total conflict: Dempster\'s normaliser 1 − K is zero, so the rule is undefined.';
+  else if(v==='X')sub='Support and refutation are exactly equal and both exceed ignorance. The paper does not specify tie-breaking, so the page shows the tie instead of calling it an abstention.';
+  else if(v==='E')sub='Most mass sits on the empty set: the sources contradict each other. This rule keeps that state separate from ignorance. The paper deploys Yager, which would abstain here.';
+  else if(v==='T')sub='The largest mass is ignorance. Standalone, the symbolic layer returns NEI; the full system defers to the no-retrieval LLM prior.';
+  else sub='The largest fused mass is on '+(v==='C'?'{C}':'{R}')+', so the symbolic layer commits.';
+  let gold='';
+  if(cur.gold&&(v==='C'||v==='R'))gold='<div style="margin-top:6px">Gold label '+(cur.gold==='C'?'CONFIRMED':'REJECTED')+': <span class="'+(v===cur.gold?'ok':'bad')+'">'+(v===cur.gold?'correct':'wrong-signed commitment')+'</span></div>';
+  else if(cur.gold)gold='<div style="margin-top:6px">Gold label '+(cur.gold==='C'?'CONFIRMED':'REJECTED')+': abstains, so the answer comes from the prior.</div>';
+  vb.innerHTML='<div class="vl">Verdict under '+names[cur.rule]+'</div><div class="vv">'+vt+'</div>'+sub+gold;
+  // rule note
+  const notes={
+    yager:'Yager: conflicting mass is moved to ignorance, so balanced support and refutation become abstention.',
+    dempster:'Dempster: conflict is normalised away by dividing by 1 − K. Under high conflict the small remaining agreement is inflated into a confident-looking split.',
+    smets:'Unnormalised: conflict stays on the empty set as m(∅), separate from ignorance (Appendix E). The paper found no decision rule built on this separation that improved macro-F1.'};
+  $('#fNote').textContent=notes[cur.rule];
+}
+$$('#ruleSeg button').forEach(b=>b.addEventListener('click',()=>{cur.rule=b.dataset.rule;$$('#ruleSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));update();}));
+$('#addT').addEventListener('click',()=>{if(cur.rows.length>=8)return;cur.rows.push({t:'(your_triple '+(cur.rows.length+1)+')',E:1,W:.5});renderRows();update();});
+let shuffleMsgTimer;
+$('#shuffleT').addEventListener('click',()=>{
+  const before=fuse(cur.rows.map(r=>bba(r.E,r.W)),cur.rule);
+  for(let i=cur.rows.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cur.rows[i],cur.rows[j]]=[cur.rows[j],cur.rows[i]];}
+  renderRows();update();
+  const after=fuse(cur.rows.map(r=>bba(r.E,r.W)),cur.rule);
+  const diff=Math.max(Math.abs(before.C-after.C),Math.abs(before.R-after.R),Math.abs(before.T-after.T)||0);
+  const note=$('#fNote');const old=note.textContent;
+  note.innerHTML='<b>Order check:</b> triples reordered, largest change in any fused mass = '+(diff<1e-12?'0 (below 1e-12)':diff.toExponential(1))+'. The n-ary form does not depend on order.';
+  clearTimeout(shuffleMsgTimer);shuffleMsgTimer=setTimeout(()=>update(),4000);
+});
+loadPreset('fig1');
+$$('[data-load]').forEach(b=>b.addEventListener('click',()=>{loadPreset(b.dataset.load);cur.rule='yager';$$('#ruleSeg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.rule==='yager'));update();$('#play').scrollIntoView({behavior:'smooth',block:'start'});}));
+
+/* ---- 5. compound operators ---- */
+let op='conj';
+const kids=[{c:.6,r:0},{c:.5,r:.1},{c:.7,r:0}];
+let tauA=1,kappa=.6;
+function sliderRow(i,k){return '<div class="ch"><div class="lab">child '+(i+1)+'</div><div><div class="sl"><span>m(C)</span><input type="range" min="0" max="1" step="0.05" value="'+k.c+'" data-i="'+i+'" data-f="c"><output class="val">'+k.c.toFixed(2)+'</output></div><div class="sl"><span>m(R)</span><input type="range" min="0" max="1" step="0.05" value="'+k.r+'" data-i="'+i+'" data-f="r"><output class="val">'+k.r.toFixed(2)+'</output></div></div></div>';}
+function buildKids(){
+  $('#opKids').innerHTML=kids.map((k,i)=>sliderRow(i,k)).join('');
+  $$('#opKids input').forEach(inp=>inp.addEventListener('input',()=>{
+    const k=kids[+inp.dataset.i],f=inp.dataset.f;k[f]=+inp.value;
+    if(k.c+k.r>1){if(f==='c')k.r=Math.round((1-k.c)*20)/20;else k.c=Math.round((1-k.r)*20)/20;buildKids();}
+    else inp.nextElementSibling.textContent=(+inp.value).toFixed(2);
+    updOp();
+  }));
+}
+function buildParams(){
+  const h=$('#opParams');
+  if(op==='agg')h.innerHTML='<label>τ<sub>a</sub> <input type="range" id="pTau" min="0" max="3" step="0.1" value="'+tauA+'"><output id="pTauo">'+tauA.toFixed(1)+'</output></label>';
+  else if(op==='neg')h.innerHTML='<label>coverage κ <input type="range" id="pK" min="0" max="1" step="0.05" value="'+kappa+'"><output id="pKo">'+kappa.toFixed(2)+'</output></label>';
+  else h.innerHTML='';
+  const t=$('#pTau');if(t)t.addEventListener('input',()=>{tauA=+t.value;$('#pTauo').textContent=tauA.toFixed(1);updOp();});
+  const k=$('#pK');if(k)k.addEventListener('input',()=>{kappa=+k.value;$('#pKo').textContent=kappa.toFixed(2);updOp();});
+}
+function updOp(){
+  let c=0,r=0,txt='';
+  const cs=kids.map(k=>k.c),rs=kids.map(k=>k.r);
+  if(op==='conj'){c=cs.reduce((a,b)=>a*b,1);r=1-rs.reduce((a,b)=>a*(1-b),1);txt='Noisy-AND on support (product of m(C)), noisy-OR on refutation. One weak or refuting child drags the whole compound down.';}
+  else if(op==='chain'){c=Math.min(...cs);r=Math.max(...rs);txt='The chain is only as strong as its weakest supporting link; the strongest refutation anywhere in it propagates.';}
+  else if(op==='agg'){const a=1/(1+Math.exp(-2*(cs.reduce((x,y)=>x+y,0)-tauA)));const rb=rs.reduce((x,y)=>x+y,0)/rs.length;c=a;r=rb*(1-a);txt='a = σ(2(Σ m(C) − τ_a)) = '+a.toFixed(3)+'. Once enough children support, opposing evidence is attenuated by (1 − a), which approaches zero as the count grows.';}
+  else{c=0;r=kappa*(1-Math.max(...cs));txt='Refutation mass is proportional to the absence of support: κ × (1 − strongest supporting child). It needs coverage κ > 0 to say anything.';}
+  if(c+r>1){const s=c+r;c/=s;r/=s;txt+=' (Polar terms were rescaled because they summed above 1.)';}
+  const t=1-c-r;
+  $('#opBar').className='sb big';$('#opBar').innerHTML=[['c',c],['r',r],['t',t]].map(p=>'<i class="'+p[0]+'" style="width:'+(p[1]*100).toFixed(2)+'%"></i>').join('');
+  $('#opRead').innerHTML='<b class="k-c">m̃(C) = '+f3(c)+'</b> &nbsp; <b class="k-r">m̃(R) = '+f3(r)+'</b> &nbsp; <b class="k-t">m̃(Θ) = '+f3(t)+'</b><br>'+txt;
+}
+$$('#opSeg button').forEach(b=>b.addEventListener('click',()=>{op=b.dataset.op;$$('#opSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));buildParams();updOp();}));
+buildKids();buildParams();updOp();
+
+/* ---- 6. results data (all from the paper) ---- */
+const BN=['Gold','Answer','Docs','PubHealth'];
+const NN={Gold:588,Answer:787,Docs:1041,PubHealth:1166};
+// Table 3: [Acc, mF1]
+const T3={
+ Gold:{'Vanilla-LLM (GPT-4.1)':[68.03,53.84],'RAG (raw text)':[56.46,51.72],'GraphRAG (adapted-summary)':[49.15,43.49],'H-GBF (full, ours)':[68.88,51.06]},
+ Answer:{'Vanilla-LLM (GPT-4.1)':[72.17,54.22],'RAG (raw text)':[61.75,55.75],'GraphRAG (adapted-summary)':[52.73,48.02],'H-GBF (full, ours)':[75.73,55.90]},
+ Docs:{'Vanilla-LLM (GPT-4.1)':[70.22,52.69],'RAG (raw text)':[54.66,50.19],'GraphRAG (adapted-summary)':[24.11,19.69],'H-GBF (full, ours)':[69.74,52.14]},
+ PubHealth:{'Vanilla-LLM (GPT-4.1)':[67.07,56.45],'RAG (raw text)':[66.64,59.51],'GraphRAG (adapted-summary)':[51.89,50.48],'H-GBF (full, ours)':[67.75,54.03]}
+};
+// Table 4: [committed acc, commit %] and macro-F1 (App. G.1)
+const T4={
+ Gold:{acc:[[42.18,100],[70.31,38.9],[73.37,65.1]],f1:[39.24,47.78,47.00]},
+ Answer:{acc:[[53.11,100],[80.32,47.1],[83.56,54.9]],f1:[49.26,53.89,54.03]},
+ Docs:{acc:[[20.56,100],[55.10,32.9],[70.98,55.6]],f1:[16.55,38.70,37.97]},
+ PubHealth:{acc:[[45.88,100],[69.03,58.1],[63.27,55.6]],f1:[46.57,46.64,45.63]}
+};
+// Table 11: model -> bench -> [vanillaAcc,vanillaF1,hAcc,hF1]
+const T11={
+ 'GPT-4.1':{Gold:[68.03,53.84,68.88,51.06],Answer:[72.17,54.22,75.73,55.90],Docs:[70.22,52.69,69.74,52.14],PubHealth:[67.07,56.45,67.75,54.03]},
+ 'Gemma-4-31B':{Gold:[64.46,48.99,66.67,49.81],Answer:[66.58,50.87,71.79,56.04],Docs:[64.55,49.08,64.75,48.72],PubHealth:[55.32,47.83,57.63,45.50]},
+ 'Llama-3.3-70B':{Gold:[65.65,51.13,61.39,48.08],Answer:[67.85,53.78,69.12,53.27],Docs:[65.61,51.69,65.42,51.67],PubHealth:[61.49,48.81,61.32,45.94]}
+};
+// Tables 2, 6, 8
+const T2={Gold:{neu:85.1,conf:3.3,rej:34.6,nei:82.4},Answer:{neu:59.1,conf:5.4,rej:18.1,nei:67.0},Docs:{neu:91.6,conf:7.9,rej:33.5,nei:74.5},PubHealth:{neu:62.7,conf:3.9,rej:49.7,nei:93.1}};
+const T6={Gold:{cov:'565/588',mpc:47.9},Answer:{cov:'785/787',mpc:5.3},Docs:{cov:'879/1,041',mpc:92.2},PubHealth:{cov:'1,116/1,166',mpc:17.4}};
+const T8={Gold:{k:.16,kd:.68},Answer:{k:.03,kd:.51},Docs:{k:.11,kd:.64},PubHealth:{k:.21,kd:.72}};
+
+function mkSeg(id,vals,onpick,init){
+  const el=$(id);vals.forEach((v,i)=>{const b=document.createElement('button');b.textContent=v;b.setAttribute('aria-pressed',i===init);b.addEventListener('click',()=>{$$('button',el).forEach(x=>x.setAttribute('aria-pressed',x===b));onpick(v);});el.appendChild(b);});
+}
+function brow(label,val,vanilla,cls,extra){
+  const d=vanilla==null?'':(val-vanilla);
+  const em=d===''||cls==='van'?'':'<em class="'+(d>=0?'pos':'neg')+'">'+(d>=0?'+':'−')+Math.abs(d).toFixed(2)+'</em>';
+  return '<div class="brow '+(cls||'')+'"><div class="bl '+(cls==='me'?'me':'')+'">'+label+'</div><div class="bt"><i style="width:'+val+'%"></i></div><div class="bv">'+val.toFixed(2)+em+(extra||'')+'</div></div>';
+}
+/* Table 3 widget */
+let rB='Gold',rM=0;
+function updRes(){
+  const rows=T3[rB];const van=rows['Vanilla-LLM (GPT-4.1)'][rM];
+  $('#resBars').innerHTML=Object.keys(rows).map(k=>brow(k,rows[k][rM],k.startsWith('Vanilla')?null:van,k.startsWith('H-GBF')?'me':k.startsWith('Vanilla')?'van':'')).join('');
+  const h=rows['H-GBF (full, ours)'];const v=rows['Vanilla-LLM (GPT-4.1)'];
+  const ra=rows['RAG (raw text)'];
+  const dA=h[0]-v[0],dF=h[1]-v[1];
+  $('#resRead').innerHTML='<b>'+rB+'</b> (n = '+NN[rB].toLocaleString('en')+'). H-GBF (full) against Vanilla-LLM: accuracy <b>'+(dA>=0?'+':'−')+Math.abs(dA).toFixed(2)+'</b>, macro-F1 <b>'+(dF>=0?'+':'−')+Math.abs(dF).toFixed(2)+'</b>. Against raw-text RAG: accuracy <b>+'+(h[0]-ra[0]).toFixed(2)+'</b>.';
+  $('#resSrc').textContent='Differences in small type are relative to Vanilla-LLM on the same claims. Accuracy and macro-F1 in %, GPT-4.1 for all rows.';
+}
+mkSeg('#resBench',BN,v=>{rB=v;updRes();},0);
+$$('#resMetric button').forEach(b=>b.addEventListener('click',()=>{rM=+b.dataset.m;$$('#resMetric button').forEach(x=>x.setAttribute('aria-pressed',x===b));updRes();}));
+updRes();
+
+/* Table 4 widget */
+let t4B='Gold';
+function updT4(){
+  const d=T4[t4B];const lab=['LLM judge (reads triples as text)','GBF (flat fusion)','H-GBF (hierarchy)'];
+  $('#t4Bars').innerHTML=lab.map((l,i)=>{
+    const a=d.acc[i];
+    return '<div class="brow '+(i===2?'me':i===0?'van':'')+'"><div class="bl '+(i===2?'me':'')+'">'+l+'</div><div class="bt"><i style="width:'+a[0]+'%"></i></div><div class="bv">'+a[0].toFixed(2)+'<em>commits '+a[1].toFixed(1)+'%</em></div></div>';}).join('');
+  $('#t4Read').innerHTML='<b>'+t4B+'</b>: committed accuracy '+d.acc.map(a=>a[0].toFixed(2)).join(' / ')+' at commit rates '+d.acc.map(a=>a[1].toFixed(1)+'%').join(' / ')+'. Macro-F1 on the same claims: '+d.f1.map(x=>x.toFixed(2)).join(' / ')+'.';
+}
+mkSeg('#t4Bench',BN,v=>{t4B=v;updT4();},0);updT4();
+
+/* Table 11 widget */
+let xB='Gold',xM=0;
+function updX(){
+  $('#xBars').innerHTML=Object.keys(T11).map((m,gi)=>{
+    const r=T11[m][xB];const van=r[xM],h=r[2+xM];
+    return '<div class="llmgroup" style="'+(gi===0?'margin-top:4px;padding-top:0;border-top:0':'')+'"><h5>'+m+'</h5>'+brow('Vanilla-LLM',van,null,'van')+brow('H-GBF (full)',h,van,'me')+'</div>';}).join('');
+}
+mkSeg('#xBench',BN,v=>{xB=v;updX();},0);
+$$('#xMetric button').forEach(b=>b.addEventListener('click',()=>{xM=+b.dataset.m;$$('#xMetric button').forEach(x=>x.setAttribute('aria-pressed',x===b));updX();}));
+updX();
+
+/* lens widget */
+let lB='Answer';
+const NARR={
+ Gold:'The densest, noisiest benchmark after Docs: 85.1% of matched triples are neutral. H-GBF (full) has the best accuracy but loses macro-F1 to deferral and class imbalance. Root filtering (k = 1) improves macro-F1 by 0.70.',
+ Answer:'The easiest case for fusion. Evidence is written in response to the claim, so only 59.1% of triples are neutral and few claims are misleading (18.1% of REJ). Fusion gains the most here, in accuracy and in macro-F1. Mean conflict K is only 0.03.',
+ Docs:'Evidence is mostly neutral: 91.6% of matched triples are neutral, though 33.5% of refuted claims still carry misleading majority polarity. Deferring to the prior is the right response for the neutral part, and the full system defers on the 44.4% of claims where fusion abstains. Standalone H-GBF still commits at 70.98% accuracy on 55.6% of claims, but few claims remain for it to improve.',
+ PubHealth:'Polar evidence is often wrong-signed: for 49.7% of refuted claims the majority of retrieved evidence supports them. Conflict is also highest here (mean K 0.21). The fusion commits mass on misleading evidence, and deferral fires only when the fusion abstains.'
+};
+function updLens(){
+  const e=T2[lB],t=T3[lB],dA=t['H-GBF (full, ours)'][0]-t['Vanilla-LLM (GPT-4.1)'][0],dF=t['H-GBF (full, ours)'][1]-t['Vanilla-LLM (GPT-4.1)'][1];
+  const sg=x=>(x>=0?'+':'−')+Math.abs(x).toFixed(2);
+  $('#lensCards').innerHTML=
+   '<div><small>Neutral triples</small><b>'+e.neu.toFixed(1)+'%</b><div class="sub">of matched triples have E = 0</div></div>'+
+   '<div><small>Misleading, REJ claims</small><b>'+e.rej.toFixed(1)+'%</b><div class="sub">majority polarity opposes gold</div></div>'+
+   '<div><small>Mean conflict K</small><b>'+T8[lB].k.toFixed(2)+'</b><div class="sub">'+T8[lB].kd.toFixed(2)+' on claims with disagreement</div></div>'+
+   '<div><small>Δ accuracy</small><b class="'+(dA>=0?'pos':'neg')+'">'+sg(dA)+'</b><div class="sub">H-GBF vs Vanilla-LLM</div></div>'+
+   '<div><small>Δ macro-F1</small><b class="'+(dF>=0?'pos':'neg')+'">'+sg(dF)+'</b><div class="sub">H-GBF vs Vanilla-LLM</div></div>';
+  $('#lensRead').innerHTML='<b>'+lB+'</b>: '+T6[lB].cov+' claims keep at least one matched triple, '+T6[lB].mpc+' matched triples per covered claim on average. Also misleading: '+e.conf.toFixed(1)+'% of CONF claims, and '+e.nei.toFixed(1)+'% of NEI claims have non-neutral majority polarity although they should carry no direction.<br>'+NARR[lB];
+}
+mkSeg('#lensBench',BN,v=>{lB=v;updLens();},1);updLens();
+
+})();
+</script>
+<script>
+/* Animated pipeline: the boxes and arrows of the paper's figure; each box plays a small schematic
+   animation when its stage is active. No controls: it loops on its own. */
+(function(){
+  var svg=document.getElementById('pipeSvg'), note=document.getElementById('pipeNote'); if(!svg) return;
+  var NS='http://www.w3.org/2000/svg';
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs){if(k==='text')e.textContent=attrs[k];else if(k==='style')e.style.cssText=attrs[k];else e.setAttribute(k,attrs[k]);}(parent||svg).appendChild(e);return e;}
+  var defs=el('defs',{});
+  [['pipeArr','var(--pg)'],['pipeArrR','var(--pr)'],['pipeArrK','var(--pk)']].forEach(function(m){var mk=el('marker',{id:m[0],viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto'},defs);el('path',{d:'M0 0L10 5L0 10z',fill:m[1]},mk);});
+  var B=[
+    {x:15,y:30,w:125,h:110,t:['Input'],s:'documents + claim'},
+    {x:170,y:40,w:140,h:90,t:['Graph Extraction']},
+    {x:380,y:40,w:170,h:90,t:['Reasoning related triples'],s:'in the evidence KG'},
+    {x:590,y:40,w:150,h:70,t:['Extended Triples']},
+    {x:590,y:140,w:150,h:95,t:['All-Steiner-trees'],s:'graph minimising'},
+    {x:590,y:265,w:150,h:95,t:['Refined Related'],s:'subgraphs'},
+    {x:400,y:275,w:150,h:85,t:['Claim-related scoring'],s:'E direction · W strength'},
+    {x:215,y:275,w:150,h:85,t:['Evidence context'],s:'triple- & subgraph-level scores'},
+    {x:60,y:275,w:115,h:85,t:['Graph Belief'],s:'Function (GBF)'},
+    {x:15,y:170,w:125,h:70,t:['Judgment'],s:'True / False / NEI'}
+  ];
+  var A=['M140 85 L168 85','M310 85 L378 85','M550 85 L588 85','M665 110 L665 138','M665 235 L665 263','M590 317 L552 317','M400 317 L367 317','M215 317 L177 317','M117 275 L117 255 L77 255 L77 242'];
+  var arrows=A.map(function(d){return el('path',{d:d,'class':'arrow'});});
+  // schematic content per box, drawn in box-local coordinates
+  function d(i){return {style:'--d:'+(i*0.18)+'s'};}
+  function node(g,x,y,r,cls,i){var n=el('circle',{cx:x,cy:y,r:r||4,'class':'node '+(cls||'')},g);if(i!==undefined)n.style.cssText='--d:'+(i*0.18)+'s';return n;}
+  function edge(g,a,b,cls,i){var e=el('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],'class':'edge '+(cls||'')},g);if(i!==undefined)e.style.cssText='--d:'+(i*0.18)+'s';return e;}
+  var inner=[
+    function(g){ // 0 input: a document whose lines write themselves, and the claim bubble
+      el('rect',{x:10,y:34,width:50,height:62,rx:3,fill:'none',stroke:'var(--ps)'},g);
+      [34,22,38,30,36].forEach(function(w,i){el('rect',{x:17,y:43+i*10,width:w,height:3,rx:1.5,fill:'var(--ps)','class':'bar',style:'--d:'+(i*0.18)+'s'},g);});
+      el('rect',{x:68,y:48,width:50,height:28,rx:9,fill:'none',stroke:'var(--pk)','class':'ani',style:'--d:1s'},g);
+      el('text',{x:93,y:66,'font-size':9,'text-anchor':'middle','class':'ani',style:'--d:1.1s',text:'claim'},g);
+    },
+    function(g){ // 1 extraction: nodes pop, edges draw
+      var P=[[28,52],[62,40],[96,58],[122,38],[70,76],[108,78]];
+      [[0,1],[1,2],[2,3],[1,4],[2,5]].forEach(function(e,i){edge(g,P[e[0]],P[e[1]],'draw',i+1);});
+      P.forEach(function(p,i){node(g,p[0],p[1],4,'ani',i);});
+    },
+    function(g){ // 2 reasoning in the KG: a larger graph, three matched entities ringed, a path lit
+      var P=[[20,45],[48,32],[52,66],[84,48],[112,34],[118,70],[148,50],[80,80]];
+      [[0,1],[1,2],[1,3],[3,4],[3,5],[4,6],[5,6],[2,7],[7,5]].forEach(function(e){edge(g,P[e[0]],P[e[1]]);});
+      [[1,3],[3,5]].forEach(function(e,i){edge(g,P[e[0]],P[e[1]],'draw hot',i+1);});
+      P.forEach(function(p,i){node(g,p[0],p[1],3.5,([1,3,5].indexOf(i)>=0?'ani hit':''),i);});
+    },
+    function(g){ // 3 extended triples: chips slide in
+      [0,1,2].forEach(function(i){el('rect',{x:12,y:30+i*12,width:126,height:8,rx:4,fill:'var(--pl)','class':'bar',style:'--d:'+(i*0.25)+'s'},g);
+        el('rect',{x:12,y:30+i*12,width:[60,90,74][i],height:8,rx:4,fill:'var(--ps)','class':'bar',style:'--d:'+(i*0.25+0.1)+'s'},g);});
+    },
+    function(g){ // 4 Steiner: unrelated nodes fade, the tree stays
+      var P=[[22,50],[50,36],[56,70],[88,52],[118,38],[122,76],[18,82],[132,56]];
+      [[0,1],[1,3],[3,4],[3,5]].forEach(function(e,i){edge(g,P[e[0]],P[e[1]],'draw keep',i);});
+      [[1,2],[2,6],[4,7],[5,7]].forEach(function(e){edge(g,P[e[0]],P[e[1]],'gone');});
+      P.forEach(function(p,i){node(g,p[0],p[1],3.5,([2,6,7].indexOf(i)>=0?'gone':''));});
+    },
+    function(g){ // 5 refined subgraph: a small tree
+      var P=[[30,46],[62,34],[62,66],[98,48],[128,40]];
+      [[0,1],[0,2],[1,3],[3,4]].forEach(function(e,i){edge(g,P[e[0]],P[e[1]],'draw keep',i);});
+      P.forEach(function(p,i){node(g,p[0],p[1],4,'ani',i);});
+    },
+    function(g){ // 6 scoring: W bar fills, E marker lands on the scale
+      el('text',{x:12,y:44,'font-size':9,'class':'ts',text:'W'},g);
+      el('rect',{x:28,y:37,width:110,height:7,rx:3.5,fill:'var(--pl)'},g);
+      el('rect',{x:28,y:37,width:99,height:7,rx:3.5,fill:'var(--pk)','class':'bar',style:'--d:.1s'},g);
+      el('text',{x:12,y:68,'font-size':9,'class':'ts',text:'E'},g);
+      el('rect',{x:28,y:61,width:110,height:7,rx:3.5,fill:'var(--pl)'},g);
+      el('line',{x1:83,y1:58,x2:83,y2:71,stroke:'var(--pg)'},g);
+      el('rect',{x:83,y:61,width:50,height:7,rx:3.5,fill:'var(--pk)','class':'bar',style:'--d:.5s'},g);
+      el('text',{x:30,y:78,'font-size':7.5,'class':'ts',text:'−2'},g);el('text',{x:132,y:78,'font-size':7.5,'class':'ts',text:'+2'},g);
+    },
+    function(g){ // 7 evidence context: triple-level bars, then one subgraph-level bar
+      el('text',{x:12,y:44,'font-size':8.5,'class':'ts',text:'triple level'},g);
+      [[62,.9],[80,.14],[98,.85],[116,.11]].forEach(function(b,i){el('rect',{x:b[0],y:36,width:14,height:10,rx:2,fill:i%2?'var(--pr)':'var(--pk)',opacity:.3+.7*b[1],'class':'ani',style:'--d:'+(i*0.18)+'s'},g);});
+      el('text',{x:12,y:68,'font-size':8.5,'class':'ts',text:'subgraph level'},g);
+      el('rect',{x:62,y:60,width:68,height:10,rx:2,fill:'var(--ps)','class':'bar',style:'--d:.9s'},g);
+    },
+    function(g,F){ // 8 GBF: the cube, then the fused bar
+      el('path',{d:'M22 52 L46 42 L70 52 L46 62 Z',fill:'var(--pl)',stroke:'var(--pk)','class':'ani',style:'--d:0s'},g);
+      el('path',{d:'M22 52 L22 72 L46 82 L46 62 Z',fill:'var(--pp)',stroke:'var(--pk)','class':'ani',style:'--d:.1s'},g);
+      el('path',{d:'M46 62 L46 82 L70 72 L70 52 Z',fill:'var(--ps)',stroke:'var(--pk)','class':'ani',style:'--d:.2s'},g);
+      el('text',{x:76,y:54,'font-size':9,'class':'ts',text:'m(C) '+F.C.toFixed(2)},g);
+      el('text',{x:76,y:66,'font-size':9,'class':'ts',text:'m(R) '+F.R.toFixed(2)},g);
+      el('text',{x:76,y:78,'font-size':9,'class':'ts',text:'m(Θ) '+F.T.toFixed(2)},g);
+    },
+    function(g,F){ // 9 judgment: three pills, the chosen one fills
+      var v=(F.C>F.R&&F.C>F.T)?0:(F.R>F.C&&F.R>F.T)?1:2;
+      ['True','False','NEI'].forEach(function(t,i){var x=10+i*38;var r=el('rect',{x:x,y:36,width:34,height:18,rx:9,fill:'var(--pp)',stroke:'var(--pg)'},g);
+        var tx=el('text',{x:x+17,y:49,'font-size':9,'text-anchor':'middle',text:t},g);
+        if(i===v){r.setAttribute('class','pick');tx.setAttribute('class','pickt');}else{tx.setAttribute('class','ts');}});
+    }
+  ];
+  // fused masses of the four Figure-1 triples (Sections 3 and 4)
+  function bbaF(E,W){var c=Math.pow(Math.max(E,0)/2,2)*W,r=Math.pow(Math.max(-E,0)/2,2)*W;return {C:c,R:r,T:1-c-r};}
+  var sC=1,sR=1,sT=1;[[2,.9],[1,.55],[-2,.85],[-1,.45]].forEach(function(t){var m=bbaF(t[0],t[1]);sC*=m.C+m.T;sR*=m.R+m.T;sT*=m.T;});
+  var K=Math.max(0,1-sC-sR+sT), F={C:sC-sT,R:sR-sT,T:sT+K};
+  var boxes=B.map(function(b,i){var g=el('g',{'class':'box',transform:'translate('+b.x+','+b.y+')'});
+    el('rect',{x:0,y:0,width:b.w,height:b.h,rx:8,'class':'frame'},g);
+    el('text',{x:8,y:16,'class':'tt',text:b.t[0]},g); if(b.s) el('text',{x:8,y:27,'class':'ts',text:b.s},g);
+    var inn=el('g',{'class':'inner'},g); inner[i](inn,F); return g;});
+  var NOTES=[
+    '<b>Input.</b> A claim (the user prompt) and the verified factual documents it is checked against. Both are plain text.',
+    '<b>Graph extraction.</b> An LLM (GPT-4.1, few-shot chain-of-thought) extracts (subject, relation, object) triples from the documents and from the claim, with subjects and objects restricted to named entities.',
+    '<b>Reasoning over related triples.</b> Claim entities are matched to entities of the evidence knowledge graph by embedding similarity (threshold 0.60). The matched entities and their neighbours form the context graph. This matching gate is where most triples drop out: on Gold and Docs 87–88% of the extracted triples, on Answer only 13%.',
+    '<b>Extended triples.</b> The matched triples together with their neighbours are the extended set that the next stage prunes.',
+    '<b>All-Steiner-trees minimising.</b> Only the connected subgraph needed to link the matched entities is kept; unrelated nodes drop out.',
+    '<b>Refined related subgraphs.</b> What survives is the claim-related evidence from which the verdict will be computed.',
+    '<b>Claim-related scoring.</b> Each surviving triple gets a direction <b>E</b> from −2 (direct refutation) to +2 (direct support) and a strength <b>W</b> from 0 to 1; directness is carried by |E|. Neutral triples stay: they leave flat fusion unchanged but can join a compound.',
+    '<b>Evidence context.</b> The squared-amplitude construction turns (E, W) into masses on support, refutation and ignorance for every triple; H-GBF adds subgraph-level masses for groups of triples that only carry evidence together (compounds).',
+    '<b>Graph belief function.</b> All root masses are fused in one n-ary step with Yager’s rule: the order of the evidence does not matter and conflicting mass goes to ignorance. For the Figure-1 triples most mass ends on ignorance.',
+    '<b>Judgment.</b> The verdict is the argmax of the fused masses: True, False, or NEI when ignorance wins. In the full system an NEI is deferred to the no-retrieval LLM.'
+  ];
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function show(i){
+    boxes.forEach(function(g,j){g.classList.toggle('act',j===i);g.classList.toggle('done',j<i);});
+    arrows.forEach(function(p,j){p.classList.toggle('flow',j===i-1);p.classList.toggle('done',j<i-1);});
+    note.innerHTML=NOTES[i];
+  }
+  if(reduce){boxes.forEach(function(g){g.classList.add('done');});arrows.forEach(function(p){p.classList.add('done');});note.innerHTML=NOTES[9];return;}
+  var cur=-1, timer=null;
+  function tick(){cur=(cur+1)%B.length;show(cur);timer=setTimeout(tick,cur===B.length-1?4200:2600);}
+  var started=false; function start(){if(started)return;started=true;tick();}
+  if('IntersectionObserver' in window){var io=new IntersectionObserver(function(es){if(es.some(function(e){return e.isIntersecting;})){start();io.disconnect();}});io.observe(svg);}else start();
+})();
+</script>
+<script src="../../assets/hero-graph.js" defer></script>
+</body>
+</html>

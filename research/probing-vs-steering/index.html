@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do Probing and Steering Favor the Same Directions? | Afshin Sadeghi</title>
+<meta name="description" content="Interactive guide to a NeurIPS 2026 paper: in three LLMs, the direction that probes a concept best is not the direction that steers it best.">
+<meta property="og:title" content="Do Probing and Steering Favor the Same Directions Within and Across Language Models?">
+<meta property="og:description" content="Interactive guide to the paper: the best probe direction is not the best steering direction, in LLaMA, Qwen and Gemma.">
+<meta property="og:type" content="article">
+<meta name="citation_title" content="Do Probing and Steering Favor the Same Directions Within and Across Language Models?">
+<meta name="citation_author" content="Sadeghi, Afshin">
+<meta name="citation_author" content="Becker, Daniel">
+<meta name="citation_conference_title" content="NeurIPS 2026 Workshop on Unifying Representations in Neural Models">
+<meta name="citation_publication_date" content="2026">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:ital,wght@0,300..700;1,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<script>
+  window.MathJax = { tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] }, svg: { fontCache: 'global' } };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+<style>
+  /* page-specific */
+  .widget svg{touch-action:auto}
+  .imgbox{background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px; text-align:center}
+  .imgbox img{margin:0 auto; border-radius:0; max-height:none; height:auto; width:100%}
+  .imgbox.small img{width:auto}
+  .imgbox.small img{max-width:430px; width:100%}
+  .vs{white-space:nowrap}
+  .kw-p{color:var(--accent-ink); font-weight:600}
+  .kw-s{color:var(--warm); font-weight:600}
+  .tag{font-family:var(--mono); font-size:.8em; background:var(--code-bg); padding:.1em .4em; border-radius:4px}
+
+  /* toy */
+  .toygrid{display:grid; grid-template-columns:1.1fr 1fr; gap:14px 18px; align-items:start}
+  .toygrid .stack{display:grid; gap:10px}
+  @media (max-width:760px){.toygrid{grid-template-columns:1fr}}
+  .panel-t{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:600; margin:0 0 2px}
+  .toy-box{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 8px 4px}
+
+  /* sweep grid */
+  .sweep{border-collapse:separate; border-spacing:3px; width:100%; min-width:560px; font-size:14px}
+  .sweep th{font-weight:600; color:var(--muted); font-size:13px; padding:2px 2px 4px; text-align:center}
+  .sweep th.grp{color:var(--ink-strong); border-bottom:2px solid var(--line); font-size:12.5px}
+  .sweep td{padding:0; text-align:center}
+  .sweep td.row{font-family:var(--mono); font-size:12.5px; color:var(--muted); text-align:right; padding-right:8px; white-space:nowrap}
+  .sweep tr.paper td.row{color:var(--accent-ink); font-weight:600}
+  .sweep .cell{display:block; width:100%; min-height:30px; border-radius:5px; border:1.5px solid transparent; background:var(--bg); cursor:pointer;
+    font:inherit; color:var(--ink); padding:3px 2px; line-height:1.15}
+  .sweep .cell:hover,.sweep .cell:focus-visible{border-color:var(--accent); outline:none}
+  .sweep .cell.sel{border-color:var(--ink-strong)}
+  .sweep .cell.fail{border-color:var(--warm)}
+  .sweep .cell svg{width:100%; height:24px; display:block}
+  .sweep .cell.paperrow{box-shadow:inset 0 0 0 1px var(--accent)}
+  .sweep .vcell{font-family:var(--mono); font-size:13px; padding:7px 2px}
+  .sweep .vcell .st{color:var(--accent-ink); font-weight:700}
+  .sweep .vcell.no{color:var(--faint)}
+
+  /* heat table */
+  table.heat{border-collapse:separate; border-spacing:4px; width:100%; font-size:15.5px}
+  table.heat th{font-weight:600; font-size:12.5px; color:var(--muted); letter-spacing:.03em; text-align:center; padding:2px 4px}
+  table.heat th.rl{text-align:left; text-transform:none; letter-spacing:0; font-size:14.5px; color:var(--ink); font-weight:400; white-space:nowrap}
+  table.heat th.rl small{color:var(--faint); font-size:12.5px; display:block}
+  table.heat td{text-align:center; font-family:var(--mono); font-size:15px; padding:11px 4px; border-radius:6px; color:var(--ink-strong)}
+  table.heat tr.hot th.rl{color:var(--ink-strong); font-weight:600}
+  @media (max-width:560px){ table.heat th.rl{white-space:normal} table.heat td{font-size:13.5px; padding:9px 2px} table.heat{font-size:14px} }
+
+  /* transfer scatter */
+  .xpt{cursor:pointer; transition:transform .35s ease}
+  .xpt:focus{outline:none}
+  .xpt:focus circle.dot,.xpt:hover circle.dot{stroke:var(--ink-strong); stroke-width:2.5}
+  .xpt text{font-size:11px; pointer-events:none}
+  @media (prefers-reduced-motion:reduce){.xpt{transition:none}}
+
+  .def-table td,.def-table th{white-space:normal; text-align:left; vertical-align:top}
+  .eqnote{font-size:15px; color:var(--muted); margin-top:-6px}
+  ul.tight li{margin-bottom:3px}
+  .toc{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:15.5px; margin:4px 0 0}
+  .nojs{font-size:14px; color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="reading-bar" id="bar"></div>
+
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="../../index.html">Afshin Sadeghi</a>
+    <a class="l on" href="../../index.html#research">Research</a>
+    <a class="l" href="../../index.html#news">News</a>
+    <a class="l" href="../../index.html#publications">Publications</a>
+    <a class="l" href="../../index.html#software">Software</a>
+    <span class="sp"></span>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap wide" style="max-width:var(--max)">
+    <p class="kicker">Probing vs. steering in LLM hidden states:</p>
+    <h1>Do Probing and Steering Favor the Same Directions Within and Across Language Models?</h1>
+    <div class="standfirst">
+      <p class="lab">In easy words</p>
+      <p>Inside a language model, a concept like &ldquo;ice cream is delicious&rdquo; shows up as a direction in the model&rsquo;s internal numbers. The direction that is best for <b>detecting</b> the concept is usually not the one that is best for <b>changing</b> what the model says.</p>
+      <p>There I showed a way to carry a concept from one LLM to another, so what you find in one model can be reused in the next, and measured when that works and when it doesn&rsquo;t. I also used the same kind of concept direction to make LLMs say &ldquo;I don&rsquo;t know&rdquo; instead of guessing, which turns far more of the uncertain wrong answers into &ldquo;I don&rsquo;t know&rdquo; (18&ndash;44 points more abstention) than of the confident ones (2&ndash;5 points), at a small cost on answers that were correct (about 1&ndash;7 points).</p>
+    </div>
+  </div>
+</header>
+
+<section class="hl" aria-label="Three results at a glance">
+  <div class="grid">
+
+    <a class="tile" href="#question">
+      <div class="vis">
+        <svg viewBox="0 0 260 170" role="img" aria-label="Animation: one arrow turns between the best probe direction and the mean difference while a Detects meter and a Changes meter rise and fall in opposite rhythm.">
+          <g fill="var(--hl-grey)" opacity=".55">
+            <circle cx="90.7" cy="107.7" r="2.6"/><circle cx="70.9" cy="96.7" r="2.6"/><circle cx="87.5" cy="96.2" r="2.6"/><circle cx="129.5" cy="118.5" r="2.6"/><circle cx="89.3" cy="103.6" r="2.6"/><circle cx="114.5" cy="110.3" r="2.6"/><circle cx="106.2" cy="100.2" r="2.6"/><circle cx="85.8" cy="94.2" r="2.6"/><circle cx="69.3" cy="79.4" r="2.6"/><circle cx="60.2" cy="83.6" r="2.6"/><circle cx="89.4" cy="96.7" r="2.6"/><circle cx="96.8" cy="93.4" r="2.6"/><circle cx="89.8" cy="100.6" r="2.6"/><circle cx="109.1" cy="102.4" r="2.6"/><circle cx="89.1" cy="85.3" r="2.6"/><circle cx="87.5" cy="83.4" r="2.6"/><circle cx="60.9" cy="92.8" r="2.6"/><circle cx="46.1" cy="83.9" r="2.6"/><circle cx="99.3" cy="101.4" r="2.6"/><circle cx="99.8" cy="107.1" r="2.6"/><circle cx="113.4" cy="108.5" r="2.6"/><circle cx="81.7" cy="91.2" r="2.6"/>
+          </g>
+          <g fill="var(--hl-slate)" opacity=".75">
+            <circle cx="148.4" cy="64.6" r="2.6"/><circle cx="149.6" cy="72.5" r="2.6"/><circle cx="133.5" cy="50.7" r="2.6"/><circle cx="154.3" cy="53.8" r="2.6"/><circle cx="212" cy="78.6" r="2.6"/><circle cx="163.7" cy="68.5" r="2.6"/><circle cx="206.1" cy="78.6" r="2.6"/><circle cx="191.2" cy="80" r="2.6"/><circle cx="166.6" cy="68.9" r="2.6"/><circle cx="183.7" cy="73.8" r="2.6"/><circle cx="165.5" cy="75.2" r="2.6"/><circle cx="210.8" cy="78" r="2.6"/><circle cx="196" cy="93.3" r="2.6"/><circle cx="157.6" cy="71.2" r="2.6"/><circle cx="154.5" cy="78.6" r="2.6"/><circle cx="172.7" cy="74.8" r="2.6"/><circle cx="164" cy="70.8" r="2.6"/><circle cx="166.7" cy="67.6" r="2.6"/><circle cx="213.9" cy="82.7" r="2.6"/><circle cx="96.4" cy="39.8" r="2.6"/><circle cx="164.1" cy="74.7" r="2.6"/><circle cx="164.3" cy="71.3" r="2.6"/>
+          </g>
+          <!-- guides: probe direction (−61°) and mean difference (−19°) from the pivot (130,87) -->
+          <g stroke="var(--hl-grey)" stroke-width="1" stroke-dasharray="3 3" opacity=".6">
+            <line x1="130" y1="87" x2="159.5" y2="34.7"/>
+            <line x1="130" y1="87" x2="186.7" y2="67.6"/>
+          </g>
+          <text x="161" y="30" font-size="10" fill="var(--hl-slate)">best probe</text>
+          <text x="190" y="64" font-size="10" fill="var(--hl-slate)">mean diff.</text>
+          <g class="hl-arrow" stroke="var(--hl-red)" fill="var(--hl-red)">
+            <line x1="130" y1="87" x2="182" y2="87" stroke-width="3" stroke-linecap="round"/>
+            <polygon points="186,87 175,81 175,93"/>
+            <circle cx="130" cy="87" r="3.5" stroke="none"/>
+          </g>
+          <!-- meters -->
+          <text x="12" y="150" font-size="11" fill="var(--hl-ink)">Detects</text>
+          <rect x="70" y="142" width="176" height="8" rx="4" fill="var(--hl-line)"/>
+          <rect class="hl-m1" x="70" y="142" width="176" height="8" rx="4" fill="var(--hl-slate)"/>
+          <text x="12" y="165" font-size="11" fill="var(--hl-ink)">Changes</text>
+          <rect x="70" y="157" width="176" height="8" rx="4" fill="var(--hl-line)"/>
+          <rect class="hl-m2" x="70" y="157" width="176" height="8" rx="4" fill="var(--hl-red)"/>
+        </svg>
+      </div>
+      <div class="cap"><b>Detect &ne; change</b><span>The arrow that reads a concept best is not the one that moves the model most.</span></div>
+    </a>
+
+    <a class="tile" href="#across">
+      <div class="vis">
+        <svg viewBox="0 0 260 170" role="img" aria-label="Animation: an arrow from Model A is carried through a map into Model B; carried the probe way it lands on B's own arrow, carried the steering way it lands off.">
+          <rect x="8" y="22" width="104" height="116" rx="8" fill="var(--hl-panel)" stroke="var(--hl-line)"/>
+          <rect x="148" y="22" width="104" height="116" rx="8" fill="var(--hl-panel)" stroke="var(--hl-line)"/>
+          <text x="60" y="38" font-size="11" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Model A</text>
+          <text x="200" y="38" font-size="11" font-weight="600" text-anchor="middle" fill="var(--hl-ink)">Model B</text>
+          <text x="130" y="72" font-size="10" text-anchor="middle" fill="var(--hl-slate)">map</text>
+          <path d="M120 82 L136 92 L120 102" fill="none" stroke="var(--hl-slate)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- A's own concept direction (−35°) -->
+          <g stroke="var(--hl-grey)" fill="var(--hl-grey)" opacity=".7">
+            <line x1="60" y1="95" x2="96" y2="69.8" stroke-width="2.5" stroke-linecap="round"/>
+            <polygon points="99.3,67.5 88.4,69.6 93.9,78.1"/>
+          </g>
+          <!-- B's own arrow (−35°, target), dashed -->
+          <g stroke="var(--hl-grey)" fill="none" opacity=".7">
+            <line x1="200" y1="95" x2="236" y2="69.8" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+            <polygon points="239.3,67.5 228.4,69.6 233.9,78.1" stroke-width="1.5"/>
+          </g>
+          <text x="60" y="124" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">A&rsquo;s &ldquo;truthful&rdquo; direction</text>
+          <text x="200" y="124" font-size="9.5" text-anchor="middle" fill="var(--hl-slate)">B&rsquo;s &ldquo;truthful&rdquo; direction</text>
+          <!-- carried arrow: drawn along +x from (60,95), rotated and moved by CSS -->
+          <g class="hl-carry" stroke="var(--hl-red)" fill="var(--hl-red)">
+            <line x1="60" y1="95" x2="100" y2="95" stroke-width="3" stroke-linecap="round"/>
+            <polygon points="104,95 93,89 93,101"/>
+            <circle cx="60" cy="95" r="3" stroke="none"/>
+          </g>
+          <text class="hl-lab1" x="130" y="160" font-size="11" text-anchor="middle" fill="var(--hl-red)" font-weight="600">probe law &middot; the probe keeps 81&ndash;91%</text>
+          <text class="hl-lab2" x="130" y="160" font-size="11" text-anchor="middle" fill="var(--hl-red)" font-weight="600">steering law &middot; mean diff. keeps 44&ndash;93%</text>
+        </svg>
+      </div>
+      <div class="cap"><b>Carried across models</b><span>Each arrow is a model&rsquo;s direction for a concept, here truthfulness: its probe, or the mean difference used for steering. Carried into the next model by a map fitted on neutral text, the probe keeps most of its score; the mean difference keeps less of its steering effect in 11 of 12 pairs.</span></div>
+    </a>
+
+    <a class="tile" href="#popqa">
+      <div class="vis hl-chat" id="hl-chat" aria-label="Animation: a model guesses at a question it is unsure about, a nudge toward 'unknown' is applied, and the guess becomes 'I don't know'; a confident answer stays the same.">
+        <div class="bq" id="hc-q"></div>
+        <div class="ba"><span id="hc-t"></span><span class="cur" id="hc-c"></span></div>
+        <div class="nudge" id="hc-n">+ &ldquo;unknown&rdquo; direction</div>
+        <div class="state" id="hc-s"></div>
+      </div>
+      <div class="cap"><b>Says &ldquo;I don&rsquo;t know&rdquo;</b><span>Steering toward &ldquo;unknown&rdquo; turns far more uncertain guesses into abstentions (+18&ndash;44 points) than confident ones (+2&ndash;5), at a small cost on correct answers (+1&ndash;7).</span></div>
+    </a>
+
+  </div>
+</section>
+
+<section class="meta">
+  <div class="grid">
+    <div>
+      <h5>Weblog author</h5>
+      <p><span class="me">Afshin Sadeghi</span></p>
+    </div>
+    <div>
+      <h5>Venue</h5>
+      <p>NeurIPS 2026 Workshop on Unifying Representations in Neural Models</p>
+    </div>
+    <div>
+      <h5>Models studied</h5>
+      <p>LLaMA-3.1-8B-Instruct</p>
+      <p>Qwen3.5-9B</p>
+      <p>Gemma-3-12B-it</p>
+    </div>
+    <div>
+      <h5>Topic</h5>
+      <p>Probing, activation steering, representation transfer across models, abstention</p>
+    </div>
+  </div>
+  <div class="badges">
+    <span class="badge venue">NeurIPS 2026 Workshop on Unifying Representations in Neural Models</span>
+    <!-- TODO(user): add a PDF badge once the camera-ready PDF is available:
+    <a class="badge" href="probing-vs-steering.pdf">PDF</a> -->
+    <a class="badge" href="#cite">BibTeX</a>
+    <a class="badge" href="../../index.html#research">More research pages</a>
+  </div>
+</section>
+
+<main>
+<div class="wrap">
+<article>
+
+  <div class="tldr">
+    <div class="lab">TL;DR</div>
+    <p>A direction in a language model's hidden state can be used two ways: <b>read</b> it to detect a concept (a probe), or <b>add</b> it to the hidden state to push the model toward the concept (steering). Probe directions are often reused for steering. We ask whether the best probe is also the best steering direction.</p>
+    <p>We build a one-parameter family of directions that runs from a covariance-adjusted discriminant to the mean difference, and measure both jobs along it at a fixed side effect, in LLaMA, Qwen and Gemma. For truthfulness and sentiment, <b>the best probe is not the best steering direction in any of the six main model&ndash;concept combinations</b> (59 of 60 layers in the sweep): steering favors directions closer to the mean difference.</p>
+    <p>The two roles also travel differently between models. A probe carried through a linear map keeps 81&ndash;91% of the target's above-chance probing score; the carried mean difference keeps less of its steering effect in 11 of 12 model pairs. Steering toward &ldquo;unknown&rdquo; on PopQA raises abstention by 18&ndash;44 points on uncertain errors and by 2&ndash;5 points on confident ones.</p>
+  </div>
+
+  <p class="toc">
+    <a href="#question">1 Two jobs</a> <a href="#toy">2 Slider</a> <a href="#models">3 Real models</a> <a href="#across">4 Across models</a> <a href="#popqa">5 &ldquo;Unknown&rdquo;</a> <a href="#limits">6 Limits</a> <a href="#new">What's new</a>
+  </p>
+
+  <!-- ============ 1 ============ -->
+  <h2 id="question"><span class="num">1</span>One direction, two jobs</h2>
+  <p class="lede">A language model turns a text into a hidden state \(h\), a vector of several thousand numbers. A direction \(w\) in that space can do two things.</p>
+  <ul>
+    <li><span class="kw-p">Probing</span> reads it. The score \(w^\top h\) tells you whether a concept, such as a true answer or a positive review, is present in the text.</li>
+    <li><span class="kw-s">Steering</span> writes along it. Replace \(h\) by \(h + a\|h\|\,w\) and the model's behavior moves toward the concept, with no change to the weights.</li>
+  </ul>
+  <p>Steering methods often reuse a probe direction for the push. That is safe only if the direction that detects a concept best is also the one that changes the model most, and nothing guarantees this. A direction can predict a concept well because it exploits variation that happens to correlate with it, without being the direction along which the model is easiest to move.</p>
+
+  <h3>The two ends of the family</h3>
+  <p>Write \(\mu_1\) and \(\mu_0\) for the average hidden state of texts with and without the concept, and \(\Sigma_W\) for the pooled within-class covariance. Two directions matter:</p>
+  <ul>
+    <li>the <b>mean difference</b> \(\Delta\mu=\mu_1-\mu_0\), which ignores how much each class spreads. It is the steering vector of contrastive activation addition and the refusal direction;</li>
+    <li>the <b>Fisher discriminant</b> \(\Sigma_W^{-1}\Delta\mu\), which corrects \(\Delta\mu\) for within-class spread. Under a shared-covariance Gaussian model it is the Bayes-optimal probe.</li>
+  </ul>
+  <p>Because \(\Sigma_W\) is estimated from fewer examples than there are dimensions, it is singular, so the paper uses a regularized family that connects the two:</p>
+  <div class="math-block">\[ w_\lambda \;=\; \frac{(\Sigma_W+\lambda I)^{-1}\,\Delta\mu}{\bigl\|(\Sigma_W+\lambda I)^{-1}\,\Delta\mu\bigr\|} \]</div>
+  <p>Small \(\lambda\) gives the probe end of the family; as \(\lambda\to\infty\) the direction becomes \(\Delta\mu\). We write \(\lambda\) in units of \(\tau=\operatorname{tr}(\Sigma_W)/d\), the average within-class variance per dimension, because raw values are not comparable across models.</p>
+
+  <h3>Comparing at a fixed side effect</h3>
+  <p>A harder push changes more than the target concept, so a direction could look good for steering just because it disturbs the model more. The paper therefore reads every direction's steering effect at the same <b>side effect</b> \(K\): the average KL divergence between the model's next-token distributions with and without the push, measured on 200 neutral WikiText-2 sentences. The budget \(\kappa_0\) is the \(K\) that \(\Delta\mu\) produces at a fixed strength, set separately for each model and concept.</p>
+
+  <figure class="wide">
+    <div class="imgbox small"><img src="img/fig_concept_main.png?v=3" width="685" height="440" alt="Diagram: hidden states of two classes, the solid mean-difference arrow between the class means, the dashed best-probe arrow tilted away from it, and a dotted arc of the family of directions between them." loading="lazy"></div>
+    <figcaption><b>The setup.</b> Hidden states of one layer, for two classes (e.g. false and true answers). The mean difference \(\Delta\mu\) joins the class means and is the usual steering vector; the best probe \(w_\tau\) is tilted away from it by the within-class spread; the family \(w_\lambda\propto(\Sigma_W+\lambda I)^{-1}\Delta\mu\) runs between them. Probing reads \(w^\top h\), steering adds \(a\|h\|w\). To carry a direction into another model, a probe goes through the transpose of the reverse map, \(M_{B\to A}^{\top}w\), and a steering direction forward, \(M_{A\to B}\Delta\mu\) (section 4). Figure from the paper.</figcaption>
+  </figure>
+
+  <!-- ============ 2 ============ -->
+  <h2 id="toy"><span class="num">2</span>A two-dimensional slider</h2>
+  <p>Before the real models, here is the geometry in two dimensions. Two classes (blue and orange) share the same stretched, tilted noise. The orange arrow is \(\Delta\mu\); the green arrow is the direction \(w_\lambda\). Slide \(\lambda\) from the probe end to \(\Delta\mu\) and watch two things: how well the score \(w^\top h\) separates the classes, and how much of a push along \(w_\lambda\) lands in the direction \(\Delta\mu\) where the classes differ.</p>
+
+  <div class="widget" id="toy">
+    <div class="wtitle">Slider &middot; illustrative, not the paper's data</div>
+    <p class="wq">Move the direction from the probe end to the mean difference</p>
+    <div class="controls">
+      <label>\(\lambda/\tau\) <input type="range" id="toy-t" min="0" max="13" step="1" value="6" aria-label="lambda over tau"> <output id="toy-tout"></output></label>
+      <label>noise tilt <input type="range" id="toy-phi" min="0" max="90" step="1" value="40" aria-label="noise tilt in degrees"> <output id="toy-phiout"></output></label>
+      <label>noise stretch <input type="range" id="toy-st" min="1" max="8" step="0.5" value="8" aria-label="noise stretch"> <output id="toy-stout"></output></label>
+    </div>
+    <div class="toygrid">
+      <div class="toy-box">
+        <p class="panel-t">Hidden states (2-D) and the two directions</p>
+        <svg id="toy-scatter" viewBox="0 0 420 340" role="img" aria-label="Scatter plot of two noisy classes with the mean-difference arrow and the current direction arrow"></svg>
+      </div>
+      <div class="stack">
+        <div class="toy-box">
+          <p class="panel-t">Probe score of the two classes</p>
+          <svg id="toy-proj" viewBox="0 0 420 150" role="img" aria-label="Distributions of the probe score for the two classes"></svg>
+        </div>
+        <div class="toy-box">
+          <p class="panel-t">Along the family</p>
+          <svg id="toy-dial" viewBox="0 0 420 175" role="img" aria-label="Probing AUROC and steering effect along the family"></svg>
+        </div>
+      </div>
+    </div>
+    <div class="readout" id="toy-read" aria-live="polite"></div>
+    <p class="src">Computed in your browser. Probe quality is the exact AUROC of the Gaussian model, \(\Phi(d'/\sqrt2)\) with \(d'=w^\top\Delta\mu/\sqrt{w^\top\Sigma_W w}\). The &ldquo;steering effect&rdquo; is the paper's first-order picture with equal push strength for every direction: only the component of the push along \(\Delta\mu\) moves the behavior, so the effect relative to \(\Delta\mu\) is \(\cos(w_\lambda,\Delta\mu)\). The same 140 random points are reused, so only the geometry changes.</p>
+    <p class="nojs" id="toy-nojs">This widget needs JavaScript.</p>
+  </div>
+
+  <p>When the noise leans toward \(\Delta\mu\), the classes overlap along \(\Delta\mu\) and the score \(\Delta\mu^\top h\) separates them poorly. The covariance-adjusted direction tilts away from \(\Delta\mu\) to avoid that spread, and probes better. But \(\Delta\mu\) is by definition the direction in which the class averages differ, so it is also the direction in which a push moves \(h\) the farthest toward the other class. With round noise (stretch 1) the two ends coincide.</p>
+  <p>The toy is deliberately simple. Here the covariance is known exactly, so the best probe sits at the small-\(\lambda\) end. In real models \(\Sigma_W\) is estimated from fewer examples than there are dimensions, which is why the best probe sits near \(\lambda=\tau\) instead. The budget also lets the probe end push 1.3&ndash;1.5 times as hard as \(\Delta\mu\) (from the paper's appendix on the first-order prediction), and for sentiment some intermediate directions beat \(\Delta\mu\), which this toy cannot show. The next section uses measured numbers.</p>
+
+  <!-- ============ 3 ============ -->
+  <h2 id="models"><span class="num">3</span>What happens in real models</h2>
+  <p>The paper tests three instruction-tuned models, LLaMA-3.1-8B-Instruct, Qwen3.5-9B and Gemma-3-12B-it, on two concepts: <b>truthfulness</b> (TruthfulQA answers labeled true or false) and <b>sentiment</b> (2,000 Yelp reviews). The main analysis reads each model at about 0.44 of its depth: layer 14 of 32, 14 of 32 and 21 of 48. For each model and concept it computes \(w_\lambda\) at 13 values of \(\lambda/\tau\), spaced by half a decade from \(10^{-3}\) to \(10^{3}\), plus \(\Delta\mu\) itself. Probing is scored by held-out AUROC. Steering is scored by the change in the answer margin (truthfulness) or in the log-odds of positive versus negative words (sentiment), at the budget \(\kappa_0\).</p>
+
+  <h3>Result 1: the two roles peak in different places</h3>
+  <p>In all six model&ndash;concept combinations, probing is best near \(\lambda=\tau\), with held-out AUROC 0.96&ndash;0.98. It drops toward \(\Delta\mu\) (0.60&ndash;0.89 there). Steering shows the opposite trend: the strongest directions lie between \(10\tau\) and \(316\tau\). The &ldquo;plateau&rdquo; of a curve is the set of directions within one standard error of its best value, and the steering plateau lies to the right of the probing plateau in all six cases.</p>
+
+  <figure class="wide">
+    <div class="anifig" id="dialFig" role="img" aria-label="Two panels, truthfulness and sentiment: probing AUROC (dashed) and steering effect relative to the mean difference (solid) along lambda over tau for LLaMA, Qwen and Gemma, redrawn from the paper's figure data and animated."></div>
+    <figcaption><b>The dial.</b> Probing (dashed, held-out AUROC, left axis) and steering relative to \(\Delta\mu\) (solid, right axis) along the family. Large markers mark the one-standard-error plateaus. Probing is best near \(\lambda=\tau\), steering further toward \(\Delta\mu\). Redrawn from the paper's figure (values read from its vector data); move along the axis to read the values.</figcaption>
+  </figure>
+
+  <div class="widget" id="plat">
+    <div class="wtitle">Measured &middot; one layer per model</div>
+    <p class="wq">Where does each role peak, and how well does the best probe steer?</p>
+    <div class="controls">
+      <div class="seg" id="plat-concept" role="group" aria-label="Concept"></div>
+      <div class="seg" id="plat-model" role="group" aria-label="Model"></div>
+      <div class="seg" id="plat-texts" role="group" aria-label="Texts"></div>
+    </div>
+    <svg id="plat-svg" viewBox="0 0 760 330" role="img" aria-label="Steering effect relative to the mean difference along lambda over tau, with probing and steering plateaus"></svg>
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>probing plateau</span>
+      <span><i style="background:var(--warm)"></i>steering plateau</span>
+      <span><i style="background:var(--warm); border-radius:50%"></i>measured steering effect</span>
+      <span><i style="background:transparent; border:2px solid var(--muted); border-radius:50%"></i>first-order prediction</span>
+    </div>
+    <div class="readout" id="plat-read" aria-live="polite"></div>
+    <p class="src">Data: plateaus, best probing AUROC, \(S(\tau)/S(\Delta\mu)\) and the H1b ratio from the paper's matched-text table (appendix); effects at \(10\tau\) and \(100\tau\), and the prediction, from its first-order table (appendix). H1b: the direction \(\lambda^*\) chosen on one held-out split, evaluated on the other, relative to \(\Delta\mu\); it counts as holding when the ratio is at least 1.1 and the paired 95% interval excludes zero. The matched-text control has no \(10\tau\) or \(100\tau\) points.</p>
+  </div>
+
+  <p>The size of the split depends on the concept.</p>
+  <ul>
+    <li><b>Truthfulness.</b> The best probe is a weak steering direction: at \(\lambda=\tau\) it changes the answer margin only 21&ndash;64% as much as \(\Delta\mu\) does at the same side effect. No direction on the path steers clearly better than \(\Delta\mu\); the largest gain, 9.6% in Qwen, falls just short of the 10% required in advance, so H1b fails in all three models.</li>
+    <li><b>Sentiment.</b> The best probe (at \(3\tau\) in LLaMA and Qwen, at \(\tau\) in Gemma) already steers about as well as \(\Delta\mu\), 0.99&ndash;1.11 of its effect. Here H1b holds in all three models: a \(\lambda^*\) chosen on one held-out split gives 27&ndash;56% more effect than \(\Delta\mu\) on the other.</li>
+  </ul>
+  <p>A first-order picture explains the shape. If the behavior responds only to the component of the push along \(\Delta\mu\), the effect at a fixed side effect is \(S(\lambda)/S(\Delta\mu)\approx \dfrac{a_\lambda(\kappa_0)}{a_{\Delta\mu}(\kappa_0)}\cos(w_\lambda,\Delta\mu)\). It reproduces the position of the steering plateau in all six cases (correlation 0.91&ndash;1.00 over the 14 directions). The probe end steers weakly because its cosine with \(\Delta\mu\) is only 0.25&ndash;0.46. (This analysis is in the appendix of the current manuscript; it is not in the workshop submission PDF.)</p>
+
+  <div class="callout">
+    <p><b>Gemma shows the split most clearly.</b> Its mean difference hardly separates the classes (AUROC 0.596 for truthfulness, 0.631 for sentiment), yet steering along it still changes the model's behavior. A direction can be nearly useless as a probe and still steer.</p>
+  </div>
+
+  <div class="callout warn">
+    <p><b>The robust result is the split, not the exact optimum.</b> Switch the widget to &ldquo;matched texts&rdquo;. In the main runs the probe reads different texts than the steering prompts. With one matched template for both, H1a still holds in all six combinations, but the sentiment gain of H1b disappears in LLaMA and Gemma (ratios 1.03 and 0.99) and shrinks in Qwen (1.31 instead of 1.56). Part of the intermediate direction's advantage came from the probe reading full reviews. The matched control also changes the instruction and separator for truthfulness, and shortens the text for sentiment, so it does not isolate one cause.</p>
+  </div>
+
+  <h3>Result 2: does it hold at other layers?</h3>
+  <p>The layer was chosen in advance. A sweep over ten depths repeats the measurements with a coarser, six-member family (\(0.001\tau, 0.1\tau, \tau, 10\tau, 100\tau, \Delta\mu\)). H1a, that the steering plateau ends further toward \(\Delta\mu\) than the probing plateau, holds in <b>59 of the 60</b> combinations of layer, model and concept. The one exception is truthfulness in LLaMA at layer 4, where \(\Delta\mu\) does not steer at all and both plateaus are \(\{\tau\}\). The stronger claim H1b is less stable: for truthfulness it fails at the layers used in the paper but holds at some others; for sentiment it holds wherever \(\Delta\mu\) steers.</p>
+
+  <div class="widget" id="sweep">
+    <div class="wtitle">Measured &middot; layer sweep, appendix of the paper</div>
+    <p class="wq">Ten depths, three models, two concepts</p>
+    <div class="controls">
+      <div class="seg" id="sw-view" role="group" aria-label="View"></div>
+    </div>
+    <div class="tablewrap" style="margin:0"><table class="sweep" id="sw-table"></table></div>
+    <div class="readout" id="sw-read" aria-live="polite">Select a cell.</div>
+    <div class="legend" id="sw-legend"></div>
+    <p class="src">Row labels give the layer in LLaMA and Qwen / the layer in Gemma. The highlighted row is the paper's depth. Plateaus are on the grid {0.001&tau;, 0.1&tau;, &tau;, 10&tau;, 100&tau;, &Delta;&mu;}. Source: tables of probing AUROC, steering and H1b ratios, and plateaus in the layer-sweep appendix. The AUROC view is the best direction of the family at each layer.</p>
+  </div>
+
+  <div class="callout">
+    <p><b>Other steering operator.</b> Spherical Steering rotates the hidden state toward the direction instead of adding it. Repeating the measurements with a gated rotation, H1a holds wherever the rotation reaches the same side-effect budget: truthfulness in all three models, and sentiment in Gemma. For sentiment in LLaMA and Qwen the gate stays mostly closed and the rotation never reaches the budget, so the comparison is not defined there. The H1b results under rotation mix the geometry with the gate, so the paper does not read them on their own.</p>
+  </div>
+
+  <!-- ============ 4 ============ -->
+  <h2 id="across"><span class="num">4</span>Do models agree on how a concept is read or changed?</h2>
+  <p>Recent work reports that independently trained models converge on similar representations. Whether two models agree on a concept may depend on whether it is read or changed, and the two roles need different maps to move between models.</p>
+  <p>Fit an affine map \(h_B\approx M_{A\to B}h_A+b\) by ridge regression on neutral text (12,800 texts, no concept labels). A steering direction is a displacement, so it goes forward through the map. A probe is a linear functional of the hidden state, so it goes through the transpose of the reverse map:</p>
+  <div class="math-block">\[ \underbrace{\delta_B=M_{A\to B}\,\delta}_{\text{steering law}} \qquad\qquad \underbrace{w_{A\to B}=M_{B\to A}^{\top}\,w_A}_{\text{probe law}} \]</div>
+  <p>To compare, each carried direction is scored against the target model's own direction:</p>
+  <div class="math-block">\[ \rho_{\text{probe}}=\frac{R_B(M_{B\to A}^{\top}w_{A})-\tfrac12}{R_B(w_{B})-\tfrac12},\qquad \rho_{\text{steer}}=\frac{S_B(M_{A\to B}\Delta\mu_A)}{S_B(\Delta\mu_B)} \]</div>
+  <p class="eqnote">\(R_B\) is held-out AUROC in model \(B\) and \(S_B\) the steering effect in \(B\) at its own budget. A value of 1 means as good as the target's own direction. The thresholds were fixed in advance: at least 0.8 counts as shared, below 0.5 as not shared.</p>
+
+  <div class="widget" id="xfer">
+    <div class="wtitle">Measured &middot; 12 ordered model pairs</div>
+    <p class="wq">Each role carried under its own law, and under the wrong one</p>
+    <div class="controls">
+      <div class="seg" id="x-concept" role="group" aria-label="Concept"></div>
+    </div>
+    <div class="controls" style="margin-bottom:4px">
+      <label>Probe carried by <span class="seg" id="x-pl" role="group" aria-label="Law used to carry the probe"></span></label>
+    </div>
+    <div class="controls">
+      <label>Steering direction carried by <span class="seg" id="x-sl" role="group" aria-label="Law used to carry the steering direction"></span></label>
+    </div>
+    <svg id="x-svg" viewBox="0 0 640 400" role="img" aria-label="Scatter of probe transfer ratio against steering transfer ratio for twelve model pairs"></svg>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>truthfulness</span>
+      <span><i style="background:var(--warm)"></i>sentiment</span>
+      <span>L = LLaMA, Q = Qwen, G = Gemma; arrows read source &rarr; target</span>
+    </div>
+    <div class="readout" id="x-read" aria-live="polite"></div>
+    <p class="src">Data: the cross-model controls table in the appendix of the current manuscript (not in the workshop submission PDF). Tap or hover a point for its pair. The shaded corners mark the paper's pre-set categories; they apply to the paper's setting (probe law, steering law).</p>
+  </div>
+
+  <p>With each role carried under its own law, a carried probe keeps <b>81&ndash;91%</b> of the target probe's above-chance AUROC in all twelve pairs. The carried mean difference reaches <b>44&ndash;93%</b> of the target's own steering effect, which is below \(\rho_{\text{probe}}\) in 11 of 12 pairs. By the categories fixed in advance, one pair is probe-shared, two sentiment pairs (LLaMA&rarr;Qwen and Gemma&rarr;Qwen) are both-shared, and <b>nine are inconclusive</b>, mostly because \(\rho_{\text{steer}}\) falls between 0.5 and 0.8. The paper reads this as a tendency in three models, not a clean classification.</p>
+  <p>The law matters. Switch the probe to the steering law in the widget: probing breaks down in every pair into Gemma (0.10, 0.10, &minus;0.10 and 0.17). An orthogonal Procrustes map, fitted on the same text, probes about as well as the probe law in 10 of the 12 pairs, so the loss comes from applying the forward map to a probe, not from fitting maps on neutral text. Across the twelve pairs, a mean difference carried by the probe law keeps how well it probed in the source (\(r=0.98\)), while one carried by the steering law follows how well the target's own mean difference probes (\(r=0.95\)). The probe law keeps what a direction reads; the steering law keeps where it pushes.</p>
+
+  <figure class="wide">
+    <div class="anifig" id="lawsFig" role="img" aria-label="Three scatter panels, redrawn from the paper's figure data and animated: probing after the probe law follows the source, probing after the steering law follows the target, and steering after each law."></div>
+    <figcaption><b>Two laws, two things carried.</b> Left: AUROC in the target after the probe law against the source's own \(\Delta\mu\) AUROC. Middle: AUROC after the steering law against the target's own. Right: steering effect in the target after each law; the steering law is higher in 12 of 12 pairs. Redrawn from the paper's figure (values read from its vector data); hover a point for its pair.</figcaption>
+  </figure>
+
+  <div class="callout warn">
+    <p><b>Three caveats the paper states.</b> (1) The maps fit the concept texts less well than neutral text (\(R^2\) 0.13&ndash;0.47 against 0.48&ndash;0.70), so part of the lost steering effect may come from the map, and no pair can be called &ldquo;neither shared&rdquo;. (2) AUROC saturates near 1. On the separation scale \(d'\), the carried probe keeps 65&ndash;79% and exceeds \(\rho_{\text{steer}}\) in 9 of 12 pairs instead of 11 (current manuscript; not in the workshop submission PDF). (3) The twelve pairs share models, so &ldquo;11 of 12&rdquo; describes a pattern in three models, not twelve independent confirmations.</p>
+  </div>
+
+  <!-- ============ 5 ============ -->
+  <h2 id="popqa"><span class="num">5</span>Application: steering toward &ldquo;unknown&rdquo;</h2>
+  <p>As a use of the same distinction, the paper asks whether the model can be steered to say &ldquo;I don't know&rdquo; when it should. For each of 4,000 PopQA questions, with abstention allowed, each model gives one greedy answer and five sampled answers. The questions are sorted by those answers:</p>
+  <div class="tablewrap">
+    <table class="data def-table">
+      <thead><tr><th>Case</th><th>Definition</th><th>LLaMA</th><th>Qwen</th><th>Gemma</th></tr></thead>
+      <tbody>
+        <tr><td><b>C0</b></td><td>correct</td><td>845</td><td>472</td><td>644</td></tr>
+        <tr><td><b>C1</b></td><td>knowledge-available error: greedy answer wrong, at least one sample correct</td><td>71</td><td>33</td><td>35</td></tr>
+        <tr><td><b>C2</b></td><td>uncertain error: no correct answer among the six, wrong greedy answer repeated in at most 2 of 5 samples</td><td>180</td><td>123</td><td>328</td></tr>
+        <tr><td><b>C3</b></td><td>confident error: no correct answer, wrong greedy answer repeated in at least 4 of 5 samples</td><td>259</td><td>83</td><td>576</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The models abstain on 57&ndash;78% of the questions and answer 11&ndash;21% correctly. The labels describe whether a correct answer is reachable under this sampling, not whether the model knows the fact. C1 is small and conservative, so its intervals are wide.</p>
+
+  <div class="widget narrow" id="rq2" style="width:100%; left:0; transform:none">
+    <div class="wtitle">Measured &middot; steering toward &ldquo;unknown&rdquo; at the side-effect budget</div>
+    <p class="wq">Which questions turn into abstentions?</p>
+    <div class="controls"><div class="seg" id="rq-model" role="group" aria-label="Model"></div></div>
+    <div class="tablewrap" style="margin:0"><table class="heat" id="rq-table"></table></div>
+    <div class="readout" id="rq-read" aria-live="polite"></div>
+    <p class="src">Change in percentage points of the questions in each case after steering, against an unsteered rerun, at the budget \(\kappa_0\). The C1 row shows the change toward a <i>correct</i> answer; the other rows show the change toward abstention. Gated &Delta;&mu; steers only questions the probe flags, at the strength of &Delta;&mu;. Random: a random direction at the same side effect. Source: Figure 3 of the paper.</p>
+  </div>
+
+  <p>Steering along \(\Delta\mu\) turns many uncertain errors into abstentions (C2: +44, +30 and +18 points for LLaMA, Qwen and Gemma) but few confident ones (C3: +5, +4 and +2), at a small cost on correct answers (C0: +7, +3 and +1). That holds in all three models. A random direction at the same side effect raises abstention on C2 by only 7, 9 and 1 points, but pushed harder it also moves C2 far more than C3, so uncertain answers give way to any push. What \(\Delta\mu\) adds is more abstentions at the same side effect.</p>
+  <p>Steering rarely corrects errors. Some knowledge-available errors become correct (11, 3 and 3%), but a random direction produces about as many (6, 6 and 9%). The paper reads these as small pushes on answers that were nearly tied, not as retrieving the fact.</p>
+  <p>Gating, steering only the questions the probe flags, lowers the cost on correct answers in LLaMA and Qwen (C0: +2 instead of +7, and +0.8 instead of +3) and keeps 65 and 84% of the gain on uncertain errors. By the rule fixed in advance it passes only in Qwen. Across models, a probe for &ldquo;unknown&rdquo; carried to another model keeps 89&ndash;96% of the target's above-chance AUROC, while a carried \(\Delta\mu\) reaches 30&ndash;79% of the target's abstention gain on uncertain errors.</p>
+
+  <!-- ============ 6 ============ -->
+  <h2 id="limits"><span class="num">6</span>Limits</h2>
+  <p>The paper lists these limitations; they bound how far the results should be read.</p>
+  <ul class="tight">
+    <li><b>Scope.</b> Three concepts (truthfulness, sentiment, &ldquo;unknown&rdquo;) and three instruction-tuned models, with the main analyses at one layer per model. The steering of the PopQA experiment was run at one layer only.</li>
+    <li><b>Not independent.</b> The twelve model pairs share models. Gemma's poorly probing mean difference affects every pair into or out of Gemma.</li>
+    <li><b>Single directions, two operators.</b> One direction at a time from one family, applied by addition or by gated rotation. Subspaces, nonlinear probes and sparse-autoencoder features are not studied.</li>
+    <li><b>What is measured.</b> Steering is the change of an answer margin or of word log-odds, not task accuracy. The side effect \(K\) is measured on neutral text, so equal \(K\) need not mean equal disruption of the task.</li>
+    <li><b>Maps.</b> Fitted on neutral text, they fit the concept texts less well. The within-class covariance is estimated from fewer examples than dimensions, so the small-\(\lambda\) end is the component of \(\Delta\mu\) outside the span of the within-class deviations rather than the exact Fisher discriminant.</li>
+    <li><b>Truthfulness data.</b> One dataset, with directions fitted and evaluated on the same distribution, so an intermediate direction's gain cannot be told apart from a gain of fitting that distribution.</li>
+  </ul>
+  <h2 id="new" style="font-size:24px"><span class="num"></span>What this paper adds</h2>
+  <div class="callout">
+    <ul class="tight" style="margin-bottom:12px">
+      <li><b>The direction itself is varied, not just the strength.</b> Earlier comparisons put a trained probe against the mean difference, two fixed directions, or vary the push strength along one direction. This paper moves along the whole family between them and measures probing and steering at every point at a fixed side effect. Result: in all six main model&ndash;concept combinations the best probe is not the best steering direction, and in 59 of 60 layers in the sweep.</li>
+      <li><b>The two roles are compared under their own transfer laws.</b> A steering direction is a displacement and goes forward through the map, \(M_{A\to B}\,\delta\); a probe is a linear functional and goes through the transpose of the reverse map, \(M_{B\to A}^{\top}w\). The laws themselves are those of Chen et al. (2025), who train the maps jointly; here the maps are fitted separately in closed form. What is new is the comparison: the same family of directions is carried in both roles between the same three model families, in every ordered pair, each role under its own law and measured against the target's own direction at a fixed side effect, with the wrong law and an orthogonal map as controls. Applying the wrong law breaks probing into Gemma entirely.</li>
+      <li><b>Models agree more on how a concept is read than on how it is changed.</b> A carried probe keeps 81&ndash;91% of the target's above-chance probing in all 12 pairs; a carried steering direction keeps 44&ndash;93% of the target's steering effect, less than the probe in 11 of 12. The probe law preserves what a direction reads (\(r=0.98\) with the source); the steering law preserves where it pushes.</li>
+      <li><b>Steering toward &ldquo;unknown&rdquo; acts on the errors the model was unsure about.</b> On PopQA it raises abstention by 18&ndash;44 points on uncertain errors and only 2&ndash;5 on confident ones, at a cost of 1&ndash;7 points on correct answers, and rarely fixes an answer. A hallucination can be turned into an &ldquo;I don't know&rdquo;, mostly where the model already wavered.</li>
+      <li><b>A closed-form direction between the probe and the mean difference can steer harder.</b> In the main sentiment setting an intermediate direction gives a 27&ndash;56% stronger steering effect than the mean difference at the same side effect, though this advantage depends on the setting.</li>
+    </ul>
+    <p class="takeaway">Probe directions should not be reused for steering without checking how well they steer, and should not be copied between models with the steering law.</p>
+  </div>
+
+  <h2 id="cite" style="font-size:24px"><span class="num"></span>Cite</h2>
+<div class="bibbox">@inproceedings{sadeghi2026probing,
+  title     = {Do Probing and Steering Favor the Same Directions
+               Within and Across Language Models?},
+  author    = {Sadeghi, Afshin and Becker, Daniel},
+  booktitle = {NeurIPS 2026 Workshop on Unifying Representations
+               in Neural Models (UniReps)},
+  year      = {2026}
+}</div>
+  <!-- TODO(user): replace with the proceedings/OpenReview entry once available. -->
+
+</article>
+</div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 Afshin Sadeghi</span>
+    <span><a href="../../index.html">Home</a> &middot; <a href="../../index.html#research">All research pages</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+/* ---------- helpers ---------- */
+var NS='http://www.w3.org/2000/svg';
+function $(s,r){return (r||document).querySelector(s)}
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs){e.setAttribute(k,attrs[k])}if(parent)parent.appendChild(e);return e}
+function tx(parent,x,y,s,attrs){var a={x:x,y:y};for(var k in (attrs||{}))a[k]=attrs[k];var t=el('text',a,parent);t.textContent=s;return t}
+function clear(n){while(n.firstChild)n.removeChild(n.firstChild)}
+function f(x,d){return (+x).toFixed(d).replace('-','−')}
+function seg(host,opts,val,cb){
+  clear(host);
+  opts.forEach(function(o){
+    var b=document.createElement('button');b.type='button';b.textContent=o.label;
+    b.setAttribute('aria-pressed',o.v===val?'true':'false');
+    b.addEventListener('click',function(){
+      Array.prototype.forEach.call(host.children,function(c){c.setAttribute('aria-pressed','false')});
+      b.setAttribute('aria-pressed','true');cb(o.v);
+    });
+    host.appendChild(b);
+  });
+}
+var FILL=function(v){return 'fill:var('+v+')'};
+var STR=function(v){return 'stroke:var('+v+')'};
+function erf(x){var s=x<0?-1:1;x=Math.abs(x);var t=1/(1+0.3275911*x);
+  var y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+function auroc(dp){return 0.5*(1+erf(dp/2))}   // = Phi(d'/sqrt2)
+
+/* reading progress */
+var bar=$('#bar');
+function onScroll(){var h=document.documentElement;var m=h.scrollHeight-h.clientHeight;bar.style.width=(m>0?100*h.scrollTop/m:0)+'%'}
+window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+/* ======================================================= TOY */
+(function(){
+  $('#toy-nojs').style.display='none';
+  var S=35,CX=210,CY=170;
+  var sc=$('#toy-scatter'),pj=$('#toy-proj'),dl=$('#toy-dial');
+  var tIn=$('#toy-t'),phiIn=$('#toy-phi'),stIn=$('#toy-st');
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  var rnd=mulberry32(11),N=70,Z=[];
+  for(var i=0;i<2*N;i++){var u=rnd()||1e-9,v=rnd(),r=Math.sqrt(-2*Math.log(u));Z.push([r*Math.cos(2*Math.PI*v),r*Math.sin(2*Math.PI*v)])}
+  var MU=[[-1,0],[1,0]],DM=[2,0],V2=0.5;
+  function sigma(){var st=+stIn.value,ph=+phiIn.value*Math.PI/180,v1=V2*st,c=Math.cos(ph),s=Math.sin(ph);
+    return {a:v1*c*c+V2*s*s,b:(v1-V2)*c*s,d:v1*s*s+V2*c*c,v1:v1,v2:V2,c:c,s:s,ph:+phiIn.value}}
+  function dirOf(Sg,lam){
+    if(lam===null)return [1,0];
+    var a=Sg.a+lam,b=Sg.b,d=Sg.d+lam,det=a*d-b*b;
+    var x=(d*DM[0]-b*DM[1])/det,y=(-b*DM[0]+a*DM[1])/det,n=Math.hypot(x,y);return [x/n,y/n]}
+  function metr(Sg,w){var sd=Math.sqrt(w[0]*w[0]*Sg.a+2*w[0]*w[1]*Sg.b+w[1]*w[1]*Sg.d);
+    var proj=w[0]*DM[0]+w[1]*DM[1];return {sd:sd,auc:auroc(proj/sd),cos:proj/Math.hypot(DM[0],DM[1])}}
+  function lamOf(Sg,i){return i>=13?null:((Sg.a+Sg.d)/2)*Math.pow(10,-3+0.5*i)}
+  function labelOf(i){return i>=13?'Δμ (λ→∞)':f(Math.pow(10,-3+0.5*i),i<4?3:(i<8?2:(i<10?1:0)))+' τ'}
+  function sx(x){return CX+x*S}function sy(y){return CY-y*S}
+  var ptsAll=null;
+  function draw(){
+    var Sg=sigma(),i=+tIn.value;
+    $('#toy-tout').textContent=labelOf(i);$('#toy-phiout').textContent=Sg.ph+'°';$('#toy-stout').textContent=f(+stIn.value,1)+'×';
+    var w=dirOf(Sg,lamOf(Sg,i)),m=metr(Sg,w);
+    /* all 14 grid points */
+    var grid=[],bestA=-1,bestAi=0;
+    for(var k=0;k<14;k++){var wk=dirOf(Sg,lamOf(Sg,k)),mk=metr(Sg,wk);grid.push(mk);if(mk.auc>bestA+1e-9){bestA=mk.auc;bestAi=k}}
+    var angle=Math.acos(Math.min(1,m.cos))*180/Math.PI;
+
+    /* --- scatter --- */
+    clear(sc);
+    var defs=el('defs',{},sc);
+    [['ah-d','--warm'],['ah-w','--accent']].forEach(function(p){
+      var mk=el('marker',{id:p[0],viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'6',markerHeight:'6',orient:'auto-start-reverse'},defs);
+      el('path',{d:'M0,0 L10,5 L0,10 z',style:FILL(p[1])},mk)});
+    el('line',{x1:0,y1:CY,x2:420,y2:CY,'class':'grid'},sc);el('line',{x1:CX,y1:0,x2:CX,y2:340,'class':'grid'},sc);
+    var u=[Sg.c,Sg.s],up=[-Sg.s,Sg.c];
+    [0,1].forEach(function(c){
+      var col=c?'--warm':'--blue';
+      [2,1].forEach(function(k){
+        el('ellipse',{cx:sx(MU[c][0]),cy:sy(MU[c][1]),rx:Math.sqrt(Sg.v1)*k*S,ry:Math.sqrt(Sg.v2)*k*S,transform:'rotate('+(-Sg.ph)+' '+sx(MU[c][0])+' '+sy(MU[c][1])+')',
+          style:'fill:var('+col+');fill-opacity:'+(k===1?0.12:0.05)+';stroke:var('+col+');stroke-opacity:.45;stroke-width:1'},sc)});
+    });
+    for(var q=0;q<2*N;q++){var c=q<N?0:1,z=Z[q];
+      var x=MU[c][0]+Math.sqrt(Sg.v1)*z[0]*u[0]+Math.sqrt(Sg.v2)*z[1]*up[0];
+      var y=MU[c][1]+Math.sqrt(Sg.v1)*z[0]*u[1]+Math.sqrt(Sg.v2)*z[1]*up[1];
+      el('circle',{cx:sx(x),cy:sy(y),r:2.6,style:FILL(c?'--warm':'--blue')+';fill-opacity:.7'},sc)}
+    /* score axis */
+    el('line',{x1:sx(-9*w[0]),y1:sy(-9*w[1]),x2:sx(9*w[0]),y2:sy(9*w[1]),style:STR('--accent')+';stroke-width:1;stroke-dasharray:3 4;opacity:.7'},sc);
+    /* delta mu arrow: class-0 mean to class-1 mean (shifted down a little so it does not hide w) */
+    el('line',{x1:sx(MU[0][0]),y1:sy(-0.55),x2:sx(MU[1][0])-3,y2:sy(-0.55),style:STR('--warm')+';stroke-width:3.2','marker-end':'url(#ah-d)'},sc);
+    tx(sc,sx(0),sy(-0.55)+16,'Δμ',{style:'fill:var(--warm);font-weight:600;font-size:14px','text-anchor':'middle'});
+    /* w arrow from origin */
+    var L=2.7;
+    el('line',{x1:sx(0),y1:sy(0),x2:sx(L*w[0]),y2:sy(L*w[1]),style:STR('--accent')+';stroke-width:3.4','marker-end':'url(#ah-w)'},sc);
+    el('circle',{cx:sx(0),cy:sy(0),r:3.5,style:FILL('--accent')},sc);
+    tx(sc,sx(L*w[0])+(w[0]>=0?8:-8),sy(L*w[1])+(w[1]>=0?-6:14),'wλ',{style:'fill:var(--accent);font-weight:600;font-size:14px','text-anchor':w[0]>=0?'start':'end'});
+    tx(sc,10,18,'class 0',{style:'fill:var(--blue);font-weight:600'});tx(sc,10,34,'class 1',{style:'fill:var(--warm);font-weight:600'});
+
+    /* --- projection panel --- */
+    clear(pj);
+    var base=122,sc2=170,pxs=function(s){return 210+s*35};
+    var m0=w[0]*MU[0][0]+w[1]*MU[0][1],m1=w[0]*MU[1][0]+w[1]*MU[1][1],sd=m.sd;
+    function pdf(s,mu){var z=(s-mu)/sd;return Math.exp(-0.5*z*z)/(sd*2.5066)}
+    var p0=[],p1=[],pm=[];
+    for(var s=-6;s<=6.001;s+=0.1){var a=pdf(s,m0),b=pdf(s,m1);p0.push([pxs(s),base-a*sc2]);p1.push([pxs(s),base-b*sc2]);pm.push([pxs(s),base-Math.min(a,b)*sc2])}
+    function poly(pts){return pts.map(function(p,j){return (j?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')}
+    function area(pts){return poly(pts)+' L'+pts[pts.length-1][0].toFixed(1)+','+base+' L'+pts[0][0].toFixed(1)+','+base+' Z'}
+    el('path',{d:area(p0),style:'fill:var(--blue);fill-opacity:.28;stroke:var(--blue);stroke-width:1.5'},pj);
+    el('path',{d:area(p1),style:'fill:var(--warm);fill-opacity:.28;stroke:var(--warm);stroke-width:1.5'},pj);
+    el('path',{d:area(pm),style:'fill:var(--ink);fill-opacity:.28;stroke:none'},pj);
+    el('line',{x1:20,y1:base,x2:400,y2:base,'class':'ax'},pj);
+    el('line',{x1:210,y1:20,x2:210,y2:base,style:STR('--muted')+';stroke-dasharray:3 3;stroke-width:1'},pj);
+    tx(pj,210,base+16,'score wᵀh',{'text-anchor':'middle'});
+    tx(pj,408,18,'AUROC '+f(m.auc,3),{'text-anchor':'end',style:'fill:var(--ink-strong);font-weight:600;font-size:14px'});
+    tx(pj,408,34,'grey = overlap',{'text-anchor':'end'});
+
+    /* --- dial panel --- */
+    clear(dl);
+    var x0=42,x1=372,y0=128,H=108,dx=(x1-x0)/13;
+    var gx=function(k){return x0+k*dx},ya=function(a){return y0-(a-0.5)/0.5*H},yc=function(c){return y0-c*H};
+    [0.5,0.75,1].forEach(function(a){el('line',{x1:x0,y1:ya(a),x2:x1,y2:ya(a),'class':'grid'},dl);tx(dl,x0-6,ya(a)+4,f(a,2),{'text-anchor':'end',style:'fill:var(--accent-ink)'})});
+    [0,0.5,1].forEach(function(c){tx(dl,x1+6,yc(c)+4,f(c,1),{style:'fill:var(--warm)'})});
+    [[0,'0.001'],[4,'0.1'],[8,'10'],[12,'1000'],[13,'Δμ']].forEach(function(t){tx(dl,gx(t[0]),y0+16,t[1],{'text-anchor':'middle'})});
+    el('line',{x1:gx(6),y1:y0,x2:gx(6),y2:y0+4,'class':'ax'},dl);tx(dl,gx(6),y0+16,'τ',{'text-anchor':'middle',style:'fill:var(--ink-strong);font-weight:600'});
+    tx(dl,(x0+x1)/2,y0+33,'λ/τ  (probe end → mean difference)',{'text-anchor':'middle'});
+    var pa=grid.map(function(g,k){return [gx(k),ya(g.auc)]}),pc=grid.map(function(g,k){return [gx(k),yc(g.cos)]});
+    el('path',{d:poly(pa),style:'fill:none;stroke:var(--accent);stroke-width:2.2;stroke-dasharray:5 3'},dl);
+    el('path',{d:poly(pc),style:'fill:none;stroke:var(--warm);stroke-width:2.4'},dl);
+    el('line',{x1:gx(i),y1:14,x2:gx(i),y2:y0,style:STR('--muted')+';stroke-width:1;stroke-dasharray:2 3'},dl);
+    el('circle',{cx:gx(i),cy:ya(m.auc),r:5,style:FILL('--bg')+';stroke:var(--accent);stroke-width:2.5'},dl);
+    el('circle',{cx:gx(i),cy:yc(m.cos),r:5,style:FILL('--warm')},dl);
+    el('circle',{cx:gx(bestAi),cy:ya(grid[bestAi].auc),r:8,style:'fill:none;stroke:var(--accent);stroke-width:1.2;opacity:.7'},dl);
+    tx(dl,x0,12,'probing AUROC (dashed)',{style:'fill:var(--accent-ink);font-weight:600'});
+    tx(dl,x1,12,'steering effect, toy (solid)',{'text-anchor':'end',style:'fill:var(--warm);font-weight:600'});
+
+    /* --- readout --- */
+    var round=Math.abs(grid[0].auc-grid[13].auc)<0.004;
+    var msg;
+    if(round){msg='With this noise the whole family probes about equally well ('+f(grid[0].auc,3)+' to '+f(grid[13].auc,3)+'), so there is nothing to trade off. Raise the stretch.';}
+    else{
+      msg='At <b>λ = '+labelOf(i)+'</b> the direction is tilted <b>'+f(angle,0)+'°</b> away from Δμ. Probe AUROC <b>'+f(m.auc,3)+'</b>; steering effect <b>'+f(m.cos,2)+'</b> of Δμ’s. '+
+        'Probing is best at about <b>λ = '+(bestAi>=13?'Δμ':labelOf(bestAi))+'</b> ('+f(bestA,3)+'); steering is best at <b>Δμ</b> (circled dot marks the probing optimum).';}
+    $('#toy-read').innerHTML=msg;
+  }
+  [tIn,phiIn,stIn].forEach(function(e){e.addEventListener('input',draw)});
+  draw();
+})();
+
+/* ======================================================= PLATEAU WIDGET */
+(function(){
+  /* plateaus in half-decade exponents of lambda/tau; 3.7 = the Delta-mu end */
+  var DM_E=3.7;
+  var D={
+    truth:{
+      LLaMA:{paper:{auc:.960,pr:[0,.5],ps:[2.5,2.5],r:{0:.21,1:.74,2:1.00},pred:{0:.38,1:.74,2:.96},h1b:1.01,star:false,k:.0013,sdm:.33},
+             matched:{auc:.958,pr:[0,.5],ps:[2,2.5],r:{0:.29},h1b:1.04,star:false,k:.0015,sdm:.25}},
+      Qwen:{paper:{auc:.961,pr:[0,0],ps:[2,2.5],r:{0:.25,1:.80,2:1.12},pred:{0:.33,1:.79,2:1.11},h1b:1.10,star:false,k:.0020,sdm:.60},
+            matched:{auc:.962,pr:[0,.5],ps:[2,2],r:{0:.19},h1b:1.08,star:false,k:.0018,sdm:.51}},
+      Gemma:{paper:{auc:.968,pr:[-.5,0],ps:[1.5,1.5],r:{0:.64,1:1.07,2:1.03},pred:{0:.33,1:.53,2:.58},h1b:1.07,star:false,k:.0020,sdm:.56},
+             matched:{auc:.968,pr:[-.5,0],ps:[.5,1],r:{0:1.30},h1b:1.87,star:true,k:.0026,sdm:.19}}},
+    sent:{
+      LLaMA:{paper:{auc:.981,pr:[.5,.5],ps:[1.5,1.5],r:{0:.76,1:1.21,2:1.29},pred:{0:.59,1:.93,2:1.12},h1b:1.31,star:true,k:.0016,sdm:.85},
+             matched:{auc:.964,pr:[1.5,1.5],ps:[2,2.5],r:{0:.22},h1b:1.03,star:false,k:.0008,sdm:1.04}},
+      Qwen:{paper:{auc:.966,pr:[.5,.5],ps:[1.5,1.5],r:{0:.79,1:1.42,2:1.51},pred:{0:.63,1:1.03,2:1.19},h1b:1.56,star:true,k:.0024,sdm:.59},
+            matched:{auc:.941,pr:[.5,1],ps:[1.5,2.5],r:{0:.34},h1b:1.31,star:true,k:.0014,sdm:.35}},
+      Gemma:{paper:{auc:.978,pr:[0,0],ps:[1,1.5],r:{0:1.00,1:1.27,2:1.16},pred:{0:.57,1:.83,2:.86},h1b:1.27,star:true,k:.0028,sdm:.73},
+             matched:{auc:.964,pr:[.5,.5],ps:[1,DM_E],r:{0:.54},h1b:.99,star:false,k:.0021,sdm:.72}}}
+  };
+  var st={concept:'truth',model:'LLaMA',texts:'paper'};
+  var svg=$('#plat-svg');
+  var NAMES={truth:'truthfulness',sent:'sentiment'};
+  var mode=null;
+  function render(){
+    clear(svg);
+    var d=D[st.concept][st.model][st.texts];
+    var narrow=svg.parentNode.clientWidth<600,W=narrow?420:760;
+    svg.setAttribute('viewBox','0 0 '+W+' 330');mode=narrow;
+    var L=narrow?58:64,R=W-(narrow?14:24),T=26,B=214,E0=-3,E1=4.0;
+    var X=function(e){return L+(e-E0)/(E1-E0)*(R-L)},Y=function(r){return B-r/1.8*(B-T)};
+    /* plateau bands across the plot */
+    var pad=0.14;
+    el('rect',{x:X(d.pr[0]-pad),y:T-6,width:X(d.pr[1]+pad)-X(d.pr[0]-pad),height:(B-T)+6,style:'fill:var(--accent);fill-opacity:.14'},svg);
+    el('rect',{x:X(d.ps[0]-pad),y:T-6,width:X(Math.min(d.ps[1]+pad,E1))-X(d.ps[0]-pad),height:(B-T)+6,style:'fill:var(--warm);fill-opacity:.14'},svg);
+    /* grid + axes */
+    [0,.5,1,1.5].forEach(function(r){el('line',{x1:L,y1:Y(r),x2:R,y2:Y(r),'class':'grid'},svg);tx(svg,L-8,Y(r)+4,f(r,1),{'text-anchor':'end'})});
+    el('line',{x1:L,y1:Y(1),x2:R,y2:Y(1),style:STR('--muted')+';stroke-width:1.2;stroke-dasharray:5 4'},svg);
+    tx(svg,L+6,Y(1)-6,'Δμ = 1',{style:'fill:var(--muted)'});
+    tx(svg,16,(T+B)/2,'steering effect / Δμ',{transform:'rotate(-90 16 '+((T+B)/2)+')','text-anchor':'middle'});
+    [-3,-2,-1,0,1,2,3].forEach(function(e){el('line',{x1:X(e),y1:B,x2:X(e),y2:B+4,'class':'ax'},svg);tx(svg,X(e),B+18,e===0?'τ':String(Math.pow(10,e)).replace(/^0\.0*1$/,function(s){return s}),{'text-anchor':'middle',style:e===0?'fill:var(--ink-strong);font-weight:600':''})});
+    tx(svg,X(DM_E),B+18,'Δμ',{'text-anchor':'middle',style:'fill:var(--ink-strong);font-weight:600'});
+    el('line',{x1:L,y1:B,x2:R,y2:B,'class':'ax'},svg);
+    tx(svg,(L+R)/2,B+36,'λ / τ   (probe end → mean difference)',{'text-anchor':'middle'});
+    /* lanes */
+    var ly1=B+54,ly2=B+80;
+    function lane(rng,y,col,lab){
+      el('rect',{x:X(rng[0]-pad),y:y-7,width:Math.max(14,X(Math.min(rng[1]+pad,E1))-X(rng[0]-pad)),height:14,rx:7,style:FILL(col)},svg)}
+    lane(d.pr,ly1,'--accent');lane(d.ps,ly2,'--warm');
+    tx(svg,L-8,ly1+4,'probing',{'text-anchor':'end',style:'fill:var(--accent-ink);font-weight:600'});
+    tx(svg,L-8,ly2+4,'steering',{'text-anchor':'end',style:'fill:var(--warm);font-weight:600'});
+    /* measured curve */
+    var pts=[];[0,1,2].forEach(function(k){if(d.r[k]!==undefined)pts.push([k,d.r[k]])});pts.push([DM_E,1]);
+    var pr=[];if(d.pred){[0,1,2].forEach(function(k){pr.push([k,d.pred[k]])});pr.push([DM_E,1])}
+    function path(a){return a.map(function(p,i){return (i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)}).join(' ')}
+    if(pr.length){el('path',{d:path(pr),style:'fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:2 4'},svg);
+      pr.slice(0,3).forEach(function(p){el('circle',{cx:X(p[0]),cy:Y(p[1]),r:5.5,style:'fill:var(--bg);stroke:var(--muted);stroke-width:2'},svg)})}
+    el('path',{d:path(pts),style:'fill:none;stroke:var(--warm);stroke-width:2.4'},svg);
+    pts.forEach(function(p){el('circle',{cx:X(p[0]),cy:Y(p[1]),r:5.5,style:FILL('--warm')},svg);
+      var below=pr.length&&p[0]!==DM_E&&d.pred[p[0]]>p[1];
+      if(p[0]!==DM_E)tx(svg,X(p[0]),Y(p[1])+(below?22:-11),f(p[1],2),{'text-anchor':'middle',style:'fill:var(--ink-strong);font-weight:600;font-size:13px'})});
+    /* readout */
+    var h=d.star?'H1b holds':'H1b does not hold';
+    var s='<b>'+st.model+', '+NAMES[st.concept]+(st.texts==='matched'?' (matched texts)':'')+'.</b> Best probing AUROC <b>'+f(d.auc,3)+'</b>. '+
+      'The probe end (λ = τ) steers <b>'+f(d.r[0],2)+'</b> as strongly as Δμ at the same side effect'+(d.r[1]!==undefined?'; at 10τ '+f(d.r[1],2)+', at 100τ '+f(d.r[2],2):'')+'. '+
+      'A λ* chosen on one split gives <b>'+f(d.h1b,2)+'</b> of Δμ’s effect on the other (<b>'+h+'</b>). '+
+      'κ₀ = '+f(d.k,4)+' nats; Δμ’s own effect '+f(d.sdm,2)+(st.concept==='truth'?' nats of margin.':' in log-odds.');
+    if(st.concept==='truth'&&st.model==='Gemma'&&st.texts==='matched')s+=' <i>The 1.87 mostly reflects a weaker Δμ here (0.19 instead of 0.56), not a stronger intermediate direction.</i>';
+    $('#plat-read').innerHTML=s;
+  }
+  function ctrl(){
+    seg($('#plat-concept'),[{v:'truth',label:'Truthfulness'},{v:'sent',label:'Sentiment'}],st.concept,function(v){st.concept=v;render()});
+    seg($('#plat-model'),[{v:'LLaMA',label:'LLaMA'},{v:'Qwen',label:'Qwen'},{v:'Gemma',label:'Gemma'}],st.model,function(v){st.model=v;render()});
+    seg($('#plat-texts'),[{v:'paper',label:'Paper’s texts'},{v:'matched',label:'Matched texts'}],st.texts,function(v){st.texts=v;render()});
+  }
+  ctrl();render();
+  window.addEventListener('resize',function(){if((svg.parentNode.clientWidth<600)!==mode)render()});
+})();
+
+/* ======================================================= LAYER SWEEP */
+(function(){
+  var DEPTH=[[.125,'4 / 6'],[.25,'8 / 12'],[.3125,'10 / 15'],[.375,'12 / 18'],[.4375,'14 / 21'],[.5,'16 / 24'],[.5625,'18 / 27'],[.625,'20 / 30'],[.75,'24 / 36'],[.875,'28 / 42']];
+  var COLS=[['T','LLaMA'],['T','Qwen'],['T','Gemma'],['S','LLaMA'],['S','Qwen'],['S','Gemma']];
+  var GRID=['0.001τ','0.1τ','τ','10τ','100τ','Δμ'];
+  /* per row, per column: [probing lo, probing hi, steering lo, steering hi] on GRID indices */
+  var PL=[
+   [[2,2,2,2],[2,2,3,4],[1,2,1,5],[2,3,4,4],[2,3,4,4],[1,1,2,4]],
+   [[2,2,4,5],[2,2,3,4],[1,2,1,3],[2,3,4,4],[2,3,4,4],[2,2,2,3]],
+   [[2,2,4,4],[2,2,4,4],[1,2,4,4],[3,3,4,4],[3,3,4,4],[2,2,3,3]],
+   [[2,2,4,4],[2,2,4,4],[1,2,5,5],[2,3,3,4],[3,3,4,4],[2,2,3,3]],
+   [[2,2,4,5],[2,2,4,4],[2,2,3,4],[2,3,4,4],[2,3,4,4],[2,2,3,3]],
+   [[2,2,4,4],[2,2,4,4],[2,2,4,4],[3,3,4,4],[2,3,4,4],[2,2,3,4]],
+   [[2,2,3,4],[2,2,4,4],[2,2,4,5],[3,3,4,4],[3,3,4,4],[2,3,4,4]],
+   [[2,2,3,3],[2,2,3,3],[2,2,5,5],[3,3,4,4],[3,3,4,4],[2,3,4,4]],
+   [[2,2,3,3],[2,2,3,4],[2,2,5,5],[3,3,4,4],[3,3,4,4],[2,3,4,4]],
+   [[2,2,3,3],[2,2,3,4],[2,2,5,5],[3,3,4,4],[2,3,4,4],[3,3,4,4]]];
+  /* H1b ratio; null = not defined; trailing flag 1 = holds */
+  var H=[
+   [[null,0],[1.78,0],[.45,0],[1.62,1],[1.97,1],[null,0]],
+   [[.97,0],[1.12,0],[1.28,0],[1.42,1],[1.68,1],[1.70,1]],
+   [[1.00,0],[1.18,1],[1.29,1],[1.46,1],[1.33,1],[1.36,1]],
+   [[1.03,0],[1.27,1],[.85,0],[1.41,1],[1.56,1],[1.26,1]],
+   [[.99,0],[1.10,0],[.99,0],[1.29,1],[1.50,1],[1.27,1]],
+   [[1.27,1],[1.05,0],[1.11,0],[1.29,1],[1.53,1],[1.33,1]],
+   [[1.57,1],[1.43,1],[.44,0],[1.28,1],[1.37,1],[1.39,1]],
+   [[1.72,0],[2.41,1],[.44,0],[1.29,1],[1.29,1],[1.42,1]],
+   [[1.52,0],[2.32,1],[-.80,0],[1.31,1],[1.46,1],[1.34,1]],
+   [[1.92,0],[1.32,1],[-.94,0],[1.23,1],[1.42,1],[1.43,1]]];
+  var A=[
+   [.886,.874,.821,.915,.880,.831],[.931,.916,.894,.957,.920,.922],[.946,.932,.927,.971,.943,.957],
+   [.958,.938,.947,.979,.960,.975],[.960,.961,.968,.980,.964,.978],[.959,.966,.971,.977,.967,.977],
+   [.952,.965,.964,.974,.967,.977],[.948,.961,.959,.970,.964,.972],[.939,.955,.953,.963,.957,.969],
+   [.937,.945,.949,.964,.955,.967]];
+  var st={view:'pl',sel:null};
+  var tbl=$('#sw-table'),read=$('#sw-read'),leg=$('#sw-legend');
+  function holds(c){return c[3]>c[1]}
+  function nHold(){var n=0;PL.forEach(function(r){r.forEach(function(c){if(holds(c))n++})});return n}
+  function miniSvg(c){
+    var s=el('svg',{viewBox:'0 0 66 24','aria-hidden':'true'});
+    for(var j=0;j<6;j++){el('rect',{x:j*11+1,y:2,width:9,height:9,rx:2,style:'fill:var(--line)'},s);el('rect',{x:j*11+1,y:13,width:9,height:9,rx:2,style:'fill:var(--line)'},s)}
+    for(var j=c[0];j<=c[1];j++)el('rect',{x:j*11+1,y:2,width:9,height:9,rx:2,style:'fill:var(--accent)'},s);
+    for(var j=c[2];j<=c[3];j++)el('rect',{x:j*11+1,y:13,width:9,height:9,rx:2,style:'fill:var(--warm)'},s);
+    return s}
+  function rng(lo,hi){return lo===hi?GRID[lo]:GRID[lo]+'–'+GRID[hi]}
+  function describe(r,k){
+    var cn=COLS[k],c=PL[r][k],conc=cn[0]==='T'?'Truthfulness':'Sentiment';
+    var lay=DEPTH[r][1].split(' / '),layer=cn[1]==='Gemma'?lay[1]:lay[0];
+    var s='<b>'+conc+', '+cn[1]+', layer '+layer+'</b> (depth '+DEPTH[r][0]+'). Probing plateau <b>'+rng(c[0],c[1])+'</b>; steering plateau <b>'+rng(c[2],c[3])+'</b>. ';
+    s+=holds(c)?'H1a holds (steering plateau ends further toward Δμ).':'<b>H1a fails</b>: both plateaus are {τ}; Δμ does not steer at this layer.';
+    var h=H[r][k];s+=' Best-probe AUROC '+f(A[r][k],3)+'. H1b ratio: '+(h[0]===null?'not defined (Δμ does not steer on the second split)':'<b>'+f(h[0],2)+'</b> ('+(h[1]?'holds':'does not hold')+').');
+    return s}
+  function build(){
+    clear(tbl);
+    var thead=document.createElement('thead'),r1=document.createElement('tr'),r2=document.createElement('tr');
+    var e=document.createElement('th');e.rowSpan=2;e.textContent='layer';r1.appendChild(e);
+    [['Truthfulness',0],['Sentiment',3]].forEach(function(g){var th=document.createElement('th');th.colSpan=3;th.className='grp';th.textContent=g[0];r1.appendChild(th)});
+    COLS.forEach(function(c){var th=document.createElement('th');th.textContent=c[1];r2.appendChild(th)});
+    thead.appendChild(r1);thead.appendChild(r2);tbl.appendChild(thead);
+    var tb=document.createElement('tbody');
+    DEPTH.forEach(function(d,r){
+      var tr=document.createElement('tr');if(r===4)tr.className='paper';
+      var td=document.createElement('td');td.className='row';td.textContent=d[1]+(r===4?' †':'');tr.appendChild(td);
+      COLS.forEach(function(cn,k){
+        var td=document.createElement('td'),b=document.createElement('button');b.type='button';b.className='cell'+(r===4?' paperrow':'');
+        b.setAttribute('aria-label',(cn[0]==='T'?'Truthfulness ':'Sentiment ')+cn[1]+' row '+d[1]);
+        if(st.view==='pl'){b.appendChild(miniSvg(PL[r][k]));if(!holds(PL[r][k]))b.className+=' fail'}
+        else if(st.view==='h1b'){var h=H[r][k];b.className+=' vcell'+(h[0]===null?' no':'');
+          b.innerHTML=h[0]===null?'–':f(h[0],2)+(h[1]?'<span class="st">*</span>':'')}
+        else{var a=A[r][k],t=Math.max(0,Math.min(1,(a-0.82)/(0.98-0.82)));b.className+=' vcell';b.textContent=f(a,3);
+          b.style.background='color-mix(in srgb, var(--accent) '+Math.round(8+t*50)+'%, var(--bg))'}
+        if(st.sel&&st.sel[0]===r&&st.sel[1]===k)b.className+=' sel';
+        b.addEventListener('click',function(){st.sel=[r,k];read.innerHTML=describe(r,k);build()});
+        td.appendChild(b);tr.appendChild(td)});
+      tb.appendChild(tr)});
+    tbl.appendChild(tb);
+    if(st.view==='pl')leg.innerHTML='<span><i style="background:var(--accent)"></i>probing plateau (top row of each cell)</span><span><i style="background:var(--warm)"></i>steering plateau (bottom row)</span><span>6 slots: 0.001τ, 0.1τ, τ, 10τ, 100τ, Δμ</span><span><b style="color:var(--warm)">orange outline</b>: H1a fails ('+nHold()+' of 60 hold)</span>';
+    else if(st.view==='h1b')leg.innerHTML='<span><b style="color:var(--accent-ink)">*</b> H1b holds (ratio ≥ 1.1 and the paired 95% interval excludes zero)</span><span>– not defined</span>';
+    else leg.innerHTML='<span>held-out AUROC of the best direction of the family; darker is higher</span>';
+  }
+  seg($('#sw-view'),[{v:'pl',label:'Plateaus (H1a)'},{v:'h1b',label:'H1b ratio'},{v:'auc',label:'Probing AUROC'}],'pl',function(v){st.view=v;build()});
+  build();
+})();
+
+/* ======================================================= TRANSFER */
+(function(){
+  /* [concept,pair,R2neutral,R2concept, rho_probe(probe law), probe under steering law, probe under Procrustes, rho_steer(steering law), steer under probe law] */
+  var P=[
+   ['T','L→Q',.56,.16,.81,.62,.80,.64,.61],['T','L→G',.70,.26,.89,.10,.89,.44,.30],['T','Q→L',.50,.14,.83,.74,.83,.54,.39],
+   ['T','Q→G',.69,.25,.88,.10,.90,.53,.21],['T','G→L',.48,.15,.91,.83,.93,.62,-.13],['T','G→Q',.53,.13,.89,.87,.90,.69,-.03],
+   ['S','L→Q',.56,.33,.89,.84,.95,.93,.85],['S','L→G',.70,.47,.86,-.10,.57,.72,.32],['S','Q→L',.50,.24,.91,.86,.95,.65,.45],
+   ['S','Q→G',.69,.37,.91,.17,.76,.70,.28],['S','G→L',.48,.23,.91,.86,.93,.70,.05],['S','G→Q',.53,.28,.91,.85,.93,.81,.07]];
+  var FULL={L:'LLaMA',Q:'Qwen',G:'Gemma'};
+  var st={concept:'both',pl:'probe',sl:'steer',sel:null};
+  var svg=$('#x-svg'),read=$('#x-read');
+  var L=62,R=620,T=14,B=348,X0=-.25,X1=1.05,Y0=-.25,Y1=1.05,xmode=null;
+  var X=function(v){return L+(v-X0)/(X1-X0)*(R-L)},Y=function(v){return B-(v-Y0)/(Y1-Y0)*(B-T)};
+  function layout(){
+    var narrow=svg.parentNode.clientWidth<600;xmode=narrow;
+    if(narrow){L=46;R=346;T=10;B=300;svg.setAttribute('viewBox','0 0 360 350')}
+    else{L=62;R=620;T=14;B=348;svg.setAttribute('viewBox','0 0 640 400')}}
+  function xv(p){return st.pl==='probe'?p[4]:(st.pl==='steer'?p[5]:p[6])}
+  function yv(p){return st.sl==='steer'?p[7]:p[8]}
+  function cat(x,y){
+    if(x>=.8&&y>=.8)return 'both-shared';
+    if(x>=.8&&y<.5)return 'probe-shared';
+    if(x<.5&&y>=.8)return 'steering-shared';
+    if(x<.5&&y<.5)return 'neither-shared';
+    return 'inconclusive'}
+  function paperSetting(){return st.pl==='probe'&&st.sl==='steer'}
+  function drawStatic(){
+    clear(svg);
+    var zones=[[.8,X1,.8,Y1,'both shared','--accent'],[.8,X1,Y0,.5,'probe shared','--blue'],[X0,.5,.8,Y1,'steering shared','--warm'],[X0,.5,Y0,.5,'neither','--muted']];
+    zones.forEach(function(z){
+      el('rect',{x:X(z[0]),y:Y(z[3]),width:X(z[1])-X(z[0]),height:Y(z[2])-Y(z[3]),style:'fill:var('+z[5]+');fill-opacity:.09'},svg);
+      var right=z[1]===X1;
+      tx(svg,right?X(z[1])-6:X(z[0])+6,z[3]===Y1?Y(z[3])+15:Y(z[2])-7,z[4],{'text-anchor':right?'end':'start',style:'font-size:11.5px;fill:var(--faint);font-style:italic'})});
+    [-.2,0,.2,.4,.6,.8,1].forEach(function(v){
+      el('line',{x1:X(v),y1:T,x2:X(v),y2:B,'class':'grid'},svg);el('line',{x1:L,y1:Y(v),x2:R,y2:Y(v),'class':'grid'},svg);
+      tx(svg,X(v),B+16,f(v,1),{'text-anchor':'middle'});tx(svg,L-8,Y(v)+4,f(v,1),{'text-anchor':'end'})});
+    el('line',{x1:X(X0),y1:Y(X0),x2:X(Y1),y2:Y(Y1),style:STR('--muted')+';stroke-width:1;stroke-dasharray:5 4'},svg);
+    el('line',{x1:X(.8),y1:T,x2:X(.8),y2:B,style:STR('--muted')+';stroke-width:1;opacity:.6'},svg);
+    el('line',{x1:L,y1:Y(.8),x2:R,y2:Y(.8),style:STR('--muted')+';stroke-width:1;opacity:.6'},svg);
+    el('line',{x1:X(.5),y1:T,x2:X(.5),y2:B,style:STR('--muted')+';stroke-width:1;opacity:.35'},svg);
+    el('line',{x1:L,y1:Y(.5),x2:R,y2:Y(.5),style:STR('--muted')+';stroke-width:1;opacity:.35'},svg);
+    tx(svg,(L+R)/2,B+36,xmode?'ρ_probe (probing, vs. target’s own probe)':'ρ_probe: probing above chance, relative to the target’s own probe',{'text-anchor':'middle'});
+    tx(svg,xmode?10:14,(T+B)/2,xmode?'ρ_steer (vs. target’s own Δμ)':'ρ_steer: steering vs. target’s own Δμ',{transform:'rotate(-90 '+(xmode?10:14)+' '+((T+B)/2)+')','text-anchor':'middle'});
+  }
+  var gs=[];
+  function init(){
+    layout();drawStatic();gs=[];
+    P.forEach(function(p,i){
+      var g=el('g',{'class':'xpt',tabindex:'0',role:'button','aria-label':FULL[p[1][0]]+' to '+FULL[p[1][2]]+', '+(p[0]==='T'?'truthfulness':'sentiment')},svg);
+      el('circle',{'class':'dot',r:8,style:FILL(p[0]==='T'?'--blue':'--warm')+';fill-opacity:.85;stroke:var(--bg);stroke-width:1.5'},g);
+      var t=tx(g,13,4,p[1],{'class':'xlab',style:'fill:var(--ink-strong);font-weight:700;font-size:12.5px;opacity:0'});
+      g.addEventListener('click',function(){st.sel=i;upd()});
+      g.addEventListener('mouseenter',function(){st.sel=i;upd(true)});
+      g.addEventListener('focus',function(){st.sel=i;upd(true)});
+      gs.push(g)});
+    upd();
+  }
+  function upd(){
+    var vis=[];
+    P.forEach(function(p,i){
+      var g=gs[i],show=st.concept==='both'||(st.concept==='T'&&p[0]==='T')||(st.concept==='S'&&p[0]==='S');
+      var x=xv(p),y=yv(p),cx=Math.max(X0+.02,Math.min(X1-.02,x)),cy=Math.max(Y0+.02,Math.min(Y1-.02,y));
+      g.style.transform='translate('+X(cx)+'px,'+Y(cy)+'px)';g.style.display=show?'':'none';
+      g.querySelector('circle').setAttribute('r',st.sel===i?9:6.5);
+      g.querySelector('text').style.opacity=st.sel===i?1:0;
+      if(st.sel===i&&svg.lastChild!==g)svg.appendChild(g);
+      if(show)vis.push(p)});
+    var xs=vis.map(xv),ys=vis.map(yv);
+    var mn=function(a){return Math.min.apply(null,a)},mx=function(a){return Math.max.apply(null,a)};
+    var below=vis.filter(function(p){return yv(p)<xv(p)}).length;
+    var s='';
+    if(st.sel!==null&&gs[st.sel].style.display!=='none'){
+      var p=P[st.sel],x=xv(p),y=yv(p);
+      s='<b>'+FULL[p[1][0]]+' → '+FULL[p[1][2]]+', '+(p[0]==='T'?'truthfulness':'sentiment')+'.</b> ρ_probe <b>'+f(x,2)+'</b>, ρ_steer <b>'+f(y,2)+'</b>. Map R²: '+f(p[2],2)+' on neutral text, '+f(p[3],2)+' on the concept texts.';
+      if(paperSetting())s+=' Pre-set category: <b>'+cat(x,y)+'</b>.';
+      s+='<br>';
+    }
+    s+='In view: '+vis.length+' pairs. ρ_probe ranges '+f(mn(xs),2)+' to '+f(mx(xs),2)+', ρ_steer '+f(mn(ys),2)+' to '+f(mx(ys),2)+'; ρ_steer is below ρ_probe in <b>'+below+' of '+vis.length+'</b>.';
+    if(paperSetting()&&st.concept==='both'){var c={};vis.forEach(function(p){var k=cat(xv(p),yv(p));c[k]=(c[k]||0)+1});
+      s+=' Categories: '+Object.keys(c).map(function(k){return c[k]+' '+k}).join(', ')+'.'}
+    if(st.pl!=='probe')s+=' <i>The probe is no longer carried by its own law.</i>';
+    if(st.sl!=='steer')s+=' <i>The steering direction is no longer carried by its own law.</i>';
+    read.innerHTML=s;
+  }
+  seg($('#x-concept'),[{v:'both',label:'Both concepts'},{v:'T',label:'Truthfulness'},{v:'S',label:'Sentiment'}],'both',function(v){st.concept=v;st.sel=null;upd()});
+  seg($('#x-pl'),[{v:'probe',label:'probe law (paper)'},{v:'steer',label:'steering law'},{v:'proc',label:'Procrustes'}],'probe',function(v){st.pl=v;upd()});
+  seg($('#x-sl'),[{v:'steer',label:'steering law (paper)'},{v:'probe',label:'probe law'}],'steer',function(v){st.sl=v;upd()});
+  init();
+  window.addEventListener('resize',function(){if((svg.parentNode.clientWidth<600)!==xmode)init()});
+})();
+
+/* ======================================================= RQ2 HEATMAP */
+(function(){
+  var ROWS=[['C0','correct','abstains (over-abstention)'],['C1','knowledge-available error','becomes correct'],['C2','uncertain error','abstains'],['C3','confident error','abstains']];
+  var COLS=['Δμ','gated Δμ','probe end','random'];
+  var DATA={
+    LLaMA:{n:[845,71,180,259],v:[[7,2,4,1],[11,3,9,6],[44,29,32,7],[5,3,2,.2]]},
+    Qwen:{n:[472,33,123,83],v:[[3,.8,4,1],[3,0,9,6],[30,25,28,9],[4,4,3,.1]]},
+    Gemma:{n:[644,35,328,576],v:[[.8,.6,.9,-.1],[3,3,3,9],[18,17,18,1],[2,2,2,.2]]}};
+  var NAME={LLaMA:'LLaMA-3.1-8B',Qwen:'Qwen3.5-9B',Gemma:'Gemma-3-12B'};
+  var st={m:'LLaMA'};
+  function fmt(v){var a=Math.abs(v);var s=a<1?a.toFixed(1):Math.round(a)+'';if(v===0)return '+0.0';return (v<0?'−':'+')+s}
+  function render(){
+    var D=DATA[st.m],t=$('#rq-table');clear(t);
+    var th=document.createElement('thead'),tr=document.createElement('tr');
+    var e=document.createElement('th');e.textContent='';tr.appendChild(e);
+    COLS.forEach(function(c){var h=document.createElement('th');h.textContent=c;tr.appendChild(h)});th.appendChild(tr);t.appendChild(th);
+    var tb=document.createElement('tbody');
+    ROWS.forEach(function(r,i){
+      var row=document.createElement('tr');if(i===2)row.className='hot';
+      var rl=document.createElement('th');rl.className='rl';rl.innerHTML=r[0]+' '+r[1]+'<small>n = '+D.n[i]+' &middot; '+r[2]+'</small>';row.appendChild(rl);
+      D.v[i].forEach(function(v){
+        var td=document.createElement('td');td.textContent=fmt(v);
+        var k=Math.max(0,Math.min(1,v/44));
+        td.style.background='color-mix(in srgb, var(--warm) '+Math.round(5+k*70)+'%, var(--bg))';
+        if(k>0.45)td.style.color='#1a1410';
+        row.appendChild(td)});
+      tb.appendChild(row)});
+    t.appendChild(tb);
+    var v=D.v;
+    $('#rq-read').innerHTML='<b>'+NAME[st.m]+'.</b> Steering along Δμ turns <b>'+fmt(v[2][0])+' points</b> of the uncertain errors (C2, n = '+D.n[2]+') into abstentions, against <b>'+fmt(v[3][0])+' points</b> of the confident errors (C3, n = '+D.n[3]+'), at a cost of '+fmt(v[0][0])+' points of correct answers (C0). A random direction at the same side effect gives '+fmt(v[2][3])+' on C2. Of the knowledge-available errors (C1, n = '+D.n[1]+'), '+fmt(v[1][0]).replace('+','')+'% become correct, against '+fmt(v[1][3]).replace('+','')+'% for the random direction.';
+  }
+  seg($('#rq-model'),[{v:'LLaMA',label:'LLaMA'},{v:'Qwen',label:'Qwen'},{v:'Gemma',label:'Gemma'}],'LLaMA',function(v){st.m=v;render()});
+  render();
+})();
+
+})();
+</script>
+<script>
+/* Highlights tile 3: the "I don't know" chat loop. Questions are fictional. */
+(function(){
+  var q=document.getElementById('hc-q'), t=document.getElementById('hc-t'), c=document.getElementById('hc-c'),
+      n=document.getElementById('hc-n'), s=document.getElementById('hc-s');
+  if(!q) return;
+  var steps=[
+    {q:'In which year was the harbour bridge of Veloria finished?', guess:'1887', after:'I don’t know.', state:'uncertain guess → abstains'},
+    {q:'What is the capital of France?', guess:'Paris', after:'Paris', state:'confident answer → usually unchanged'}
+  ];
+  var still=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(still){ q.textContent=steps[0].q; t.textContent=steps[0].after; n.classList.add('on'); s.textContent=steps[0].state; s.classList.add('on'); return; }
+  var i=0, timer=null, typing=null;
+  function wait(ms,f){ timer=setTimeout(f,ms); }
+  function type(str,done){
+    var k=0; t.textContent=''; c.classList.add('on');
+    typing=setInterval(function(){ k++; t.textContent=str.slice(0,k); if(k>=str.length){ clearInterval(typing); c.classList.remove('on'); done(); } },55);
+  }
+  function erase(done){
+    typing=setInterval(function(){ var v=t.textContent; if(!v){ clearInterval(typing); done(); return; } t.textContent=v.slice(0,-1); },30);
+  }
+  function run(){
+    var st=steps[i%steps.length]; i++;
+    n.classList.remove('on'); s.classList.remove('on'); t.textContent='';
+    q.textContent=st.q;
+    wait(700,function(){ type(st.guess,function(){
+      wait(900,function(){ n.classList.add('on');
+        wait(700,function(){
+          if(st.after!==st.guess){ erase(function(){ type(st.after,function(){ s.textContent=st.state; s.classList.add('on'); wait(2600,run); }); }); }
+          else { s.textContent=st.state; s.classList.add('on'); wait(2600,run); }
+        });
+      });
+    }); });
+  }
+  var started=false;
+  function start(){ if(started) return; started=true; run(); }
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){ if(es.some(function(e){return e.isIntersecting;})){ start(); io.disconnect(); } });
+    io.observe(document.getElementById('hl-chat'));
+  } else start();
+})();
+</script>
+<script src="figs.js" defer></script>
+</body>
+</html>

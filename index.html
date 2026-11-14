@@ -4,214 +4,238 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Afshin Sadeghi</title>
-<meta name="description" content="Afshin (Sean) Sadeghi, PhD — research scientist working on the reliability, factuality, and safety of large language models.">
+<meta name="description" content="Afshin (Sean) Sadeghi, PhD: AI researcher working on representation learning, mechanistic interpretability and AI safety. How language models represent and use knowledge, hallucination detection, and model steering.">
 <meta property="og:title" content="Afshin Sadeghi">
-<meta property="og:description" content="Research scientist working on the reliability, factuality, and safety of large language models.">
-<style>
-  :root{
-    --ink:#1a1a1a; --muted:#6a7178; --faint:#8b9198;
-    --line:#eceef0; --accent:#345; --bg:#fff; --max:720px;
-  }
-  *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.65; font-size:17px; font-weight:400;
-  }
-  a{color:var(--ink); text-decoration:none; border-bottom:1px solid #cfd4d8}
-  a:hover{border-bottom-color:var(--ink)}
-  .wrap{max-width:var(--max); margin:0 auto; padding:0 24px}
-
-  /* top nav */
-  nav{border-bottom:1px solid var(--line)}
-  nav .wrap{display:flex; gap:22px; align-items:center; padding:16px 24px; flex-wrap:wrap}
-  nav .name{font-weight:600; border:0; font-size:16px}
-  nav .spacer{flex:1}
-  nav a{border:0; color:var(--muted); font-size:14px}
-  nav a:hover{color:var(--ink)}
-
-  /* header */
-  header.intro{padding:44px 0 8px}
-  header .row{display:flex; gap:24px; align-items:center; flex-wrap:wrap}
-  .avatar{width:92px; height:92px; border-radius:50%; object-fit:cover; flex:0 0 auto}
-  header h1{margin:0 0 3px; font-size:26px; font-weight:600; letter-spacing:-.2px}
-  header .sub{color:var(--muted); font-size:15px; margin:0}
-  .contact{margin-top:10px; font-size:14px; display:flex; gap:16px; flex-wrap:wrap}
-  .contact a{color:var(--muted); border:0}
-  .contact a:hover{color:var(--ink)}
-
-  main{padding:26px 0 60px}
-  section{padding:26px 0; border-top:1px solid var(--line)}
-  section:first-of-type{border-top:0}
-  h2{font-size:13px; text-transform:uppercase; letter-spacing:.11em; color:var(--faint);
-     margin:0 0 14px; font-weight:600}
-  p{margin:0 0 14px}
-  p:last-child{margin-bottom:0}
-  .bio a{color:var(--ink)}
-
-  ul.pubs{list-style:none; margin:0; padding:0}
-  ul.pubs li{padding:11px 0}
-  .pt{font-weight:500}
-  .pmeta{color:var(--muted); font-size:14px; margin-top:1px}
-  .venue{color:var(--accent); font-weight:600}
-  .pnote{color:var(--muted); font-size:14px; font-style:italic; margin-top:1px}
-  .plinks{font-size:13px; margin-top:3px}
-  .plinks a{color:var(--muted); border:0; margin-right:14px}
-  .plinks a:hover{color:var(--ink)}
-
-  .exp{margin:0; padding:0; list-style:none}
-  .exp li{display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--line)}
-  .exp li:last-child{border-bottom:0}
-  .exp .eo{font-weight:500}
-  .exp .ey{color:var(--muted); font-size:14px; white-space:nowrap}
-
-  .soft{margin:0; padding:0; list-style:none}
-  .soft li{padding:8px 0; display:flex; gap:10px; flex-wrap:wrap; align-items:baseline}
-  .soft .st{font-weight:500}
-  .soft .sd{color:var(--muted); font-size:14px}
-
-  footer{border-top:1px solid var(--line); color:var(--faint); font-size:13px;
-         padding:22px 0 44px}
-</style>
+<meta property="og:description" content="AI researcher: how language models represent and use knowledge, and how that can make them more interpretable and reliable.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Sans+3:ital,wght@0,300..700;1,300..700&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
 
-<nav>
-  <div class="wrap">
-    <span class="name">Afshin Sadeghi</span>
-    <span class="spacer"></span>
-    <a href="#experience">Experience</a>
-    <a href="#publications">Publications</a>
-    <a href="#software">Software</a>
-    <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en">Google Scholar</a>
-    <a href="https://www.linkedin.com/in/afshin-sadeghi/">LinkedIn</a>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">Afshin Sadeghi</a>
+    <a class="l" href="#research">Research</a>
+    <a class="l" href="#news">News</a>
+    <a class="l" href="#publications">Publications</a>
+    <a class="l" href="#software">Software</a>
+    <span class="sp"></span>
   </div>
 </nav>
 
-<header class="intro">
-  <div class="wrap">
+<header class="home-top">
+  <div class="wrap wide">
     <div class="row">
       <img class="avatar" src="images/photo-circle.png" alt="Afshin Sadeghi">
-      <div>
-        <h1>Afshin <span style="color:var(--muted);font-weight:400">(Sean)</span> Sadeghi, PhD</h1>
-        <p class="sub">AI Scientist, Fraunhofer IAIS &middot; K&ouml;ln, Germany</p>
-        <div class="contact">
-          <a href="mailto:sadeghi@afshn.com">sadeghi@afshn.com</a>
+      <div class="bio">
+        <h1>Afshin (Sean) Sadeghi, PhD</h1>
+        <p class="role">AI researcher &middot; representation learning, interpretability, AI safety</p>
+        <p>I am an AI researcher with a PhD in Artificial Intelligence, working at the intersection of representation learning, mechanistic interpretability, and AI safety. I study how large language models represent and use knowledge, and how their internal mechanisms can inform hallucination detection and model steering.</p>
+        <p>My work spans research on understanding LLM internals and on machine-learning representations for knowledge graphs. My goal is to improve how AI systems understand and reason about information, while making their behavior more interpretable and reliable.</p>
+        <div class="linkrow">
+          <a href="mailto:sadeghi@afshn.com">Email</a>
+          <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&amp;hl=en">Google Scholar</a>
+          <a href="https://github.com/afshinsadeghi">GitHub</a>
+          <a href="https://www.linkedin.com/in/afshin-sadeghi/">LinkedIn</a>
         </div>
       </div>
     </div>
   </div>
 </header>
 
-<main class="wrap">
+<main class="wrap wide">
 
-  <section class="bio">
-    <p>Large language models are fluent but not reliable: they state falsehoods confidently, drift from their evidence, and are hard to steer toward honest behavior. My research is about closing that gap, making the outputs of LLMs faithful, verifiable, and aligned with what a model actually knows.</p>
-    <p>I focus on this from three directions: detecting hallucinations before they reach the user, intervening on a model's internal representations at inference time to shape its behavior, and grounding generation in retrieved evidence so that answers can be checked. Earlier in my career I worked on representation learning and knowledge-graph embeddings, which still shapes how I think about structure and reliability in modern AI systems.</p>
-    <p>I hold a PhD in Artificial Intelligence from the University of Bonn, where I worked on learning representations for knowledge graphs and their application in NLP, and have so far authored 15+ peer-reviewed publications, including first-author work at NeurIPS. Since last year I joined the AI Assurance and Assessment department to focus more on my research of AI safety.</p>
-    <p>Previously, I was a Research Scientist at Fraunhofer IAIS, where I contributed to LLM development and post-training in the OpenGPT-X project and led the MLwin project on knowledge-graph embeddings, and worked with industry partners such as BMW and Sanofi. Before that, I was a researcher at the University of Bonn, building knowledge graphs for scholarly communication. Before research, I worked as a software developer in Cologne, at Loyalty Factory and at Comunio, whose online game was named Germany&rsquo;s Most Popular Online Game of the Year while I was on the team.</p>
+  <!-- ===================== RESEARCH ===================== -->
+  <section class="hsec" id="research">
+    <h2>Latest research</h2>
+    <p class="sub">Two lines of work, each with an interactive page that walks through the paper.</p>
+
+    <div class="focus">
+      <div class="f">
+        <h3>Connections between LLM representations</h3>
+        <p>Is the direction in a model&rsquo;s hidden state that detects a concept the same one that changes the model&rsquo;s behavior? And how much of this carries over from one model to another?</p>
+      </div>
+      <div class="f">
+        <h3>Graph inference for fact checking</h3>
+        <p>Replacing opaque LLM-as-judge verdicts with explicit belief-function reasoning over retrieved knowledge-graph triples, so factuality checks are traceable and more reliable.</p>
+      </div>
+    </div>
+
+    <div class="rcards" style="margin-top:18px">
+
+      <a class="rcard" href="research/probing-vs-steering/">
+        <div class="thumb">
+          <img src="research/probing-vs-steering/img/fig_concept_main.png" alt="Figure 1 of the paper: hidden states of two classes, the best probe direction and the mean-difference steering direction" loading="lazy">
+        </div>
+        <div class="txt">
+          <div class="tag">NeurIPS 2026 Workshop on Unifying Representations in Neural Models</div>
+          <h3>Do Probing and Steering Favor the Same Directions Within and Across Language Models?</h3>
+          <p>Across three instruction-tuned models, the best probe is not the best steering direction. Explore the geometry, the layer sweep, and cross-model transfer.</p>
+          <span class="go">Open the interactive page &rarr;</span>
+        </div>
+      </a>
+
+      <a class="rcard" href="research/evidential-graph-reasoning/">
+        <div class="thumb">
+          <img src="research/evidential-graph-reasoning/img/pipeline-factcheck.png" alt="Pipeline figure of the paper: documents to graph extraction, Steiner-tree subgraphs, triple scoring, and the graph belief function that gives the verdict" loading="lazy">
+        </div>
+        <div class="txt">
+          <div class="tag">EACL 2027 (Findings)</div>
+          <h3>Evidential Graph Reasoning for LLM Factuality: A Belief-Function Fusion of Retrieved Triples</h3>
+          <p>Fact checking by combining evidence from knowledge-graph triples with belief functions, instead of asking an LLM to judge. Combine the evidence yourself and watch conflict appear.</p>
+          <span class="go">Open the interactive page &rarr;</span>
+        </div>
+      </a>
+
+    </div>
   </section>
 
-  <section id="experience">
-    <h2>Experience</h2>
-    <ul class="exp">
-      <li><span class="eo">Fraunhofer IAIS</span><span class="ey">2018&ndash;present</span></li>
-      <li><span class="eo">University of Bonn</span><span class="ey">2016&ndash;2018</span></li>
-      <li><span class="eo">Loyalty Factory GmbH</span><span class="ey">2014&ndash;2015</span></li>
-      <li><span class="eo">Comunio GmbH</span><span class="ey">2013&ndash;2014</span></li>
+  <!-- ===================== NEWS ===================== -->
+  <section class="hsec" id="news">
+    <h2>News</h2>
+    <p class="sub">Most recent first.</p>
+    <ul class="timeline">
+      <!-- Dates: month-level where known. Edit freely; newest first. -->
+      <li class="hot"><span class="d">Nov 2026</span><span class="t">Paper accepted at the <b>NeurIPS 2026 Workshop on Unifying Representations in Neural Models</b>: <i>Do Probing and Steering Favor the Same Directions Within and Across Language Models?</i> <small><a href="research/probing-vs-steering/">Interactive page</a></small></span></li>
+      <li class="hot"><span class="d">Nov 2026</span><span class="t">Paper accepted at <b>EACL 2027 (Findings)</b>: <i>Evidential Graph Reasoning for LLM Factuality: A Belief-Function Fusion of Retrieved Triples</i>. <small><a href="research/evidential-graph-reasoning/">Interactive page</a></small></span></li>
+      <li><span class="d">Feb 2026</span><span class="t">White paper <i>Robustness and Reproducibility for Data-Driven Weather Forecasting</i> published for the Destination Earth initiative (ECMWF). <small><a href="papers/robustness-reproducibility-data-driven-weather-forecasting-2026.pdf">PDF</a></small></span></li>
+      <li><span class="d">2024</span><span class="t"><i>Building Virtual Patients Using Simulation-Based Inference</i> published in Frontiers in Systems Biology. <small><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></small></span></li>
+      <li><span class="d">2023</span><span class="t">Completed my PhD in Artificial Intelligence at the University of Bonn, magna cum laude.</span></li>
+      <li><span class="d">2021</span><span class="t">Papers at <b>NeurIPS</b>, <b>ECML-PKDD</b> and <b>SEMANTiCS</b>.</span></li>
+      <li><span class="d">2020</span><span class="t">MDE, a multi-distance embedding model for knowledge-graph link prediction, published at <b>ECAI</b>.</span></li>
     </ul>
   </section>
 
-  <section id="publications">
-    <h2>Selected Publications</h2>
+  <!-- ===================== PUBLICATIONS ===================== -->
+  <section class="hsec" id="publications">
+    <h2>Publications</h2>
+    <p class="sub">Selected. 20+ peer-reviewed in total; the full list is on <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&amp;hl=en">Google Scholar</a>.</p>
+
     <ul class="pubs">
 
       <li>
+        <div class="pt">Do Probing and Steering Favor the Same Directions Within and Across Language Models?</div>
+        <div class="pa"><span class="me">A. Sadeghi</span> et al.</div>
+        <div class="pv"><span class="venue">NeurIPS 2026 Workshop on Unifying Representations in Neural Models</span></div>
+        <div class="pl"><a class="hi" href="research/probing-vs-steering/">Interactive page</a></div>
+      </li>
+
+      <li>
+        <div class="pt">Evidential Graph Reasoning for LLM Factuality: A Belief-Function Fusion of Retrieved Triples</div>
+        <div class="pa"><span class="me">A. Sadeghi</span> et al.</div>
+        <div class="pv"><span class="venue">EACL 2027 (Findings)</span></div>
+        <div class="pl"><a class="hi" href="research/evidential-graph-reasoning/">Interactive page</a></div>
+      </li>
+
+      <li>
         <div class="pt">Robustness and Reproducibility for Data-Driven Weather Forecasting</div>
-        <div class="pmeta">S. Schmidt, M. Akila, A. Sadeghi, E. Prjadka, D. Benn-Maksimovic &middot; <span class="venue">Destination Earth White Paper 2026</span></div>
-        <div class="plinks"><a href="papers/robustness-reproducibility-data-driven-weather-forecasting-2026.pdf">PDF</a><a href="papers/robustness-reproducibility-weather-forecasting.html">Details</a><a href="https://www.ecmwf.int/sites/default/files/elibrary/022026/81718-robustness-and-reproducibility-for-data-driven-weather-forecasting.pdf">ECMWF</a></div>
+        <div class="pa">S. Schmidt, M. Akila, <span class="me">A. Sadeghi</span>, E. Prjadka, D. Benn-Maksimovic</div>
+        <div class="pv"><span class="venue">Destination Earth white paper, ECMWF 2026</span></div>
+        <div class="pl"><a href="papers/robustness-reproducibility-data-driven-weather-forecasting-2026.pdf">PDF</a><a href="papers/robustness-reproducibility-weather-forecasting.html">Details</a><a href="https://www.ecmwf.int/sites/default/files/elibrary/022026/81718-robustness-and-reproducibility-for-data-driven-weather-forecasting.pdf">ECMWF</a></div>
       </li>
 
       <li>
         <div class="pt">Building Virtual Patients Using Simulation-Based Inference</div>
-        <div class="pmeta">N. Paul, V. Karamitsou, C. Giegerich, A. Sadeghi, et al. &middot; <span class="venue">Frontiers in Systems Biology 2024</span></div>
-        <div class="pnote">Includes experiments on generating virtual patients using diffusion models.</div>
-        <div class="plinks"><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></div>
+        <div class="pa">N. Paul, V. Karamitsou, C. Giegerich, <span class="me">A. Sadeghi</span>, M. L&uuml;cke, B. Wagenhuber, A. Kister, M. Rehberg</div>
+        <div class="pv"><span class="venue">Frontiers in Systems Biology 2024</span></div>
+        <div class="pn">Includes experiments on generating virtual patients using diffusion models.</div>
+        <div class="pl"><a href="https://www.frontiersin.org/articles/10.3389/fsysb.2024.1444912/full">Paper</a></div>
       </li>
 
       <li>
         <div class="pt">Relational Pattern Benchmarking on the Knowledge Graph Link Prediction Task</div>
-        <div class="pmeta">A. Sadeghi, H. Abdul Malik, D. Collarana, J. Lehmann &middot; <span class="venue">NeurIPS 2021</span></div>
-        <div class="plinks"><a href="https://openreview.net/pdf?id=Gln7zxMffae">Paper</a><a href="https://github.com/mlwin-de/relational_pattern_benchmarking">Code</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, H. Abdul Malik, D. Collarana, J. Lehmann</div>
+        <div class="pv"><span class="venue">NeurIPS 2021</span></div>
+        <div class="pl"><a href="https://openreview.net/pdf?id=Gln7zxMffae">Paper</a><a href="https://github.com/mlwin-de/relational_pattern_benchmarking">Code</a></div>
       </li>
 
       <li>
         <div class="pt">Embedding Knowledge Graphs Attentive to Positional and Centrality Qualities</div>
-        <div class="pmeta">A. Sadeghi, D. Collarana, D. Graux, J. Lehmann &middot; <span class="venue">ECML 2021</span></div>
-        <div class="plinks"><a href="https://2021.ecmlpkdd.org/wp-content/uploads/2021/07/sub_1096.pdf">Paper</a><a href="https://github.com/afshinsadeghi/GFA-NN">Code</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, D. Collarana, D. Graux, J. Lehmann</div>
+        <div class="pv"><span class="venue">ECML-PKDD 2021</span></div>
+        <div class="pl"><a href="https://2021.ecmlpkdd.org/wp-content/uploads/2021/07/sub_1096.pdf">Paper</a><a href="https://github.com/afshinsadeghi/GFA-NN">Code</a></div>
       </li>
 
       <li>
         <div class="pt">BenchEmbedd: A FAIR Benchmarking Tool for Knowledge Graph Embeddings</div>
-        <div class="pmeta">A. Sadeghi, X. Shahini, M. Schmitz, J. Lehmann &middot; <span class="venue">SEMANTiCS 2021</span></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, X. Shahini, M. Schmitz, J. Lehmann</div>
+        <div class="pv"><span class="venue">SEMANTiCS 2021</span></div>
       </li>
 
       <li>
         <div class="pt">MDE: Multiple Distance Embeddings for Link Prediction in Knowledge Graphs</div>
-        <div class="pmeta">A. Sadeghi, D. Graux, H. Shariat Yazdi, J. Lehmann &middot; <span class="venue">ECAI 2020</span></div>
-        <div class="plinks"><a href="https://ecai2020.eu/papers/1271_paper.pdf">Paper</a><a href="https://github.com/mlwin-de/MDE">Code</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, D. Graux, H. Shariat Yazdi, J. Lehmann</div>
+        <div class="pv"><span class="venue">ECAI 2020</span></div>
+        <div class="pl"><a href="https://ecai2020.eu/papers/1271_paper.pdf">Paper</a><a href="https://github.com/mlwin-de/MDE">Code</a></div>
       </li>
 
       <li>
         <div class="pt">Meta-Hyperband: Hyperparameter Optimization with Meta-Learning and Coarse-to-Fine</div>
-        <div class="pmeta">S. Payrosangari, A. Sadeghi, D. Graux, J. Lehmann &middot; <span class="venue">IDEAL 2020</span></div>
-        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-030-62362-3_30">Paper</a></div>
+        <div class="pa">S. Payrosangari, <span class="me">A. Sadeghi</span>, D. Graux, J. Lehmann</div>
+        <div class="pv"><span class="venue">IDEAL 2020</span></div>
+        <div class="pl"><a href="https://link.springer.com/chapter/10.1007/978-3-030-62362-3_30">Paper</a></div>
       </li>
 
       <li>
         <div class="pt">Opening and Reusing Transparent Peer Reviews with Automatic Article Annotation</div>
-        <div class="pmeta">A. Sadeghi, S. Capadisli, J. Wilm, C. Lange, P. Mayr &middot; <span class="venue">Publications (MDPI) 2019</span></div>
-        <div class="plinks"><a href="https://www.mdpi.com/2304-6775/7/1/9">Paper</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, S. Capadisli, J. Wilm, C. Lange, P. Mayr</div>
+        <div class="pv"><span class="venue">Publications (MDPI) 2019</span></div>
+        <div class="pl"><a href="https://www.mdpi.com/2304-6775/7/1/9">Paper</a></div>
       </li>
 
       <li>
         <div class="pt">Linking Physicians to Medical Research Results via Knowledge Graph Embeddings and Twitter</div>
-        <div class="pmeta">A. Sadeghi, J. Lehmann &middot; <span class="venue">ECML Workshops 2019</span></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, J. Lehmann</div>
+        <div class="pv"><span class="venue">ECML Workshops 2019</span></div>
       </li>
 
       <li>
         <div class="pt">Integration of Scholarly Communication Metadata Using Knowledge Graphs</div>
-        <div class="pmeta">A. Sadeghi, C. Lange, M.-E. Vidal, S. Auer &middot; <span class="venue">TPDL 2017</span></div>
-        <div class="plinks"><a href="https://link.springer.com/chapter/10.1007/978-3-319-67008-9_26">Paper</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, C. Lange, M.-E. Vidal, S. Auer</div>
+        <div class="pv"><span class="venue">TPDL 2017</span></div>
+        <div class="pl"><a href="https://link.springer.com/chapter/10.1007/978-3-319-67008-9_26">Paper</a></div>
       </li>
 
       <li>
         <div class="pt">Steiner Tree Methods for Optimal Sub-Network Identification: An Empirical Study</div>
-        <div class="pmeta">A. Sadeghi, H. Fr&ouml;hlich &middot; <span class="venue">BMC Bioinformatics 2013</span></div>
-        <div class="plinks"><a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-144">Paper</a></div>
+        <div class="pa"><span class="me">A. Sadeghi</span>, H. Fr&ouml;hlich</div>
+        <div class="pv"><span class="venue">BMC Bioinformatics 2013</span></div>
+        <div class="pl"><a href="https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-14-144">Paper</a></div>
       </li>
 
     </ul>
-    <p style="margin-top:14px;font-size:14px;color:var(--muted)">
-      Full list on <a href="https://scholar.google.com/citations?user=uWTszVEAAAAJ&hl=en" style="color:var(--muted);border:0;text-decoration:underline">Google Scholar</a>.
-    </p>
   </section>
 
-  <section id="software">
-    <h2>Open-Source Contributions</h2>
+  <!-- ===================== SOFTWARE ===================== -->
+  <section class="hsec" id="software">
+    <h2>Open-source software</h2>
     <ul class="soft">
       <li><span class="st"><a href="https://github.com/afshinsadeghi/SteinerNet">SteinerNet</a></span> <span class="sd">&mdash; R library for Steiner tree computation. 24K+ CRAN downloads.</span></li>
       <li><span class="st"><a href="https://github.com/afshinsadeghi/min_llm_server_client">min_llm_server_client</a></span> <span class="sd">&mdash; ready-to-use server API for language models, compatible with Hugging Face models and vLLM. 14K+ pip downloads.</span></li>
-      <li><span class="st"><a href="https://github.com/afshinsadeghi/steinernetpy">steinernetpy</a></span> <span class="sd">&mdash; Python implementation of the SteinerNet library.</span></li>
+      <li><span class="st"><a href="https://github.com/afshinsadeghi/steinernetpy">steinernetpy</a></span> <span class="sd">&mdash; Python implementation of SteinerNet.</span></li>
     </ul>
   </section>
 
+  <!-- ===================== BACKGROUND ===================== -->
+  <section class="hsec" id="background">
+    <h2>Background</h2>
+    <ul class="explist">
+      <li><span class="eo">Research Scientist and Project Lead, Fraunhofer IAIS</span><span class="ey">2018&ndash;present</span></li>
+      <li><span class="eo">Research Scientist, University of Bonn</span><span class="ey">2016&ndash;2018</span></li>
+      <li><span class="eo">PhD in Artificial Intelligence, University of Bonn</span><span class="ey">2017&ndash;2023</span><span class="ed">Magna cum laude. Thesis: &ldquo;Multiple Objectives for Efficient Knowledge Graph Learning&rdquo;</span></li>
+      <li><span class="eo">MSc in Computer Science, University of Bonn</span><span class="ey">2009&ndash;2011</span></li>
+    </ul>
+  </section>
 
 </main>
 
-<footer class="wrap">
-  &copy; 2026 Afshin Sadeghi
+<footer class="site">
+  <div class="wrap wide">
+    <span>&copy; 2026 Afshin Sadeghi</span>
+    <span><a href="mailto:sadeghi@afshn.com">sadeghi@afshn.com</a></span>
+  </div>
 </footer>
 
 </body>
